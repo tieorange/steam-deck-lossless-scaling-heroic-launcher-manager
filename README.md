@@ -24,10 +24,28 @@ A Flutter desktop application for Steam Deck that enables **Lossless Scaling fra
 
 ## Installation
 
-### From Flatpak (Recommended)
+### On Steam Deck (Recommended)
+
+The easiest way to install is directly on your Steam Deck in Desktop Mode:
 
 ```bash
-# Install from local build
+# 1. Clone or copy the project to your Steam Deck
+git clone https://github.com/example/heroic-lsfg-applier.git
+cd heroic-lsfg-applier
+
+# 2. Run the build script
+./scripts/build_on_deck.sh
+
+# 3. Install locally (adds to app menu)
+./scripts/install_local.sh
+```
+
+The app will appear in your application menu as "Heroic LSFG Applier".
+
+### From Flatpak (Advanced)
+
+```bash
+# Install from local build (requires flatpak-builder)
 flatpak-builder --user --install --force-clean build flatpak/org.example.heroic_lsfg_applier.yaml
 
 # Or install from Flathub (when available)

@@ -107,10 +107,9 @@ class _GamesPageState extends State<GamesPage> {
           FilledButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
-              await cubit.applyLsfgToSelected();
+              final success = await cubit.applyLsfgToSelected();
               if (context.mounted) {
-                final state = cubit.state;
-                if (state is GamesLoaded) {
+                if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('LSFG applied successfully!')),
                   );
@@ -152,10 +151,9 @@ class _GamesPageState extends State<GamesPage> {
           FilledButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
-              await cubit.removeLsfgFromSelected();
+              final success = await cubit.removeLsfgFromSelected();
               if (context.mounted) {
-                final state = cubit.state;
-                if (state is GamesLoaded) {
+                if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('LSFG removed successfully!')),
                   );

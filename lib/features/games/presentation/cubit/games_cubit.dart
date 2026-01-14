@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_state.dart';
@@ -108,7 +109,8 @@ class GamesCubit extends Cubit<GamesState> {
   }
   
   /// Apply LSFG to selected games
-  Future<void> applyLsfgToSelected() async {
+  /// Returns true if successful, false otherwise
+  Future<bool> applyLsfgToSelected() async {
     final currentState = state;
     if (currentState is GamesLoaded) {
       final selectedAppNames = currentState.games
@@ -116,21 +118,40 @@ class GamesCubit extends Cubit<GamesState> {
           .map((g) => g.appName)
           .toList();
       
-      if (selectedAppNames.isEmpty) return;
+      debugPrint('[GamesCubit] applyLsfgToSelected called');
+      debugPrint('[GamesCubit] Selected games: $selectedAppNames');
+      
+      if (selectedAppNames.isEmpty) {
+        debugPrint('[GamesCubit] No games selected, returning false');
+        return false;
+      }
       
       emit(currentState.copyWith(isApplying: true));
       
+      debugPrint('[GamesCubit] Calling repository.applyLsfgToGames...');
       final result = await _gameRepository.applyLsfgToGames(selectedAppNames);
       
+      bool success = false;
       result.fold(
-        (failure) => emit(GamesState.error(message: failure.message)),
-        (_) => loadGames(), // Reload to reflect changes
+        (failure) {
+          debugPrint('[GamesCubit] Apply failed: ${failure.message}');
+          emit(GamesState.error(message: failure.message));
+        },
+        (_) {
+          debugPrint('[GamesCubit] Apply succeeded, reloading games...');
+          success = true;
+          loadGames(); // Reload to reflect changes
+        },
       );
+      return success;
     }
+    debugPrint('[GamesCubit] State is not GamesLoaded, returning false');
+    return false;
   }
   
   /// Remove LSFG from selected games
-  Future<void> removeLsfgFromSelected() async {
+  /// Returns true if successful, false otherwise
+  Future<bool> removeLsfgFromSelected() async {
     final currentState = state;
     if (currentState is GamesLoaded) {
       final selectedAppNames = currentState.games
@@ -138,17 +159,35 @@ class GamesCubit extends Cubit<GamesState> {
           .map((g) => g.appName)
           .toList();
       
-      if (selectedAppNames.isEmpty) return;
+      debugPrint('[GamesCubit] removeLsfgFromSelected called');
+      debugPrint('[GamesCubit] Selected games: $selectedAppNames');
+      
+      if (selectedAppNames.isEmpty) {
+        debugPrint('[GamesCubit] No games selected, returning false');
+        return false;
+      }
       
       emit(currentState.copyWith(isApplying: true));
       
+      debugPrint('[GamesCubit] Calling repository.removeLsfgFromGames...');
       final result = await _gameRepository.removeLsfgFromGames(selectedAppNames);
       
+      bool success = false;
       result.fold(
-        (failure) => emit(GamesState.error(message: failure.message)),
-        (_) => loadGames(), // Reload to reflect changes
+        (failure) {
+          debugPrint('[GamesCubit] Remove failed: ${failure.message}');
+          emit(GamesState.error(message: failure.message));
+        },
+        (_) {
+          debugPrint('[GamesCubit] Remove succeeded, reloading games...');
+          success = true;
+          loadGames(); // Reload to reflect changes
+        },
       );
+      return success;
     }
+    debugPrint('[GamesCubit] State is not GamesLoaded, returning false');
+    return false;
   }
   
   /// Get count of selected games
