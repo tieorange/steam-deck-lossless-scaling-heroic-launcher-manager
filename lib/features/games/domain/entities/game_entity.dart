@@ -1,0 +1,24 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'game_entity.freezed.dart';
+
+/// Represents a game installed via Heroic Games Launcher
+@freezed
+class Game with _$Game {
+  const factory Game({
+    /// Unique game identifier (from app_name in JSON)
+    required String appName,
+    
+    /// Display title of the game
+    required String title,
+    
+    /// Path to cached game icon (may be null)
+    String? iconPath,
+    
+    /// Whether LSFG environment variable is already set
+    required bool hasLsfgEnabled,
+    
+    /// Whether this game is selected in the UI
+    @Default(false) bool isSelected,
+  }) = _Game;
+}

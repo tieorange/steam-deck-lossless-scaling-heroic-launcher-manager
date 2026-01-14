@@ -1,0 +1,45 @@
+name: heroic_lsfg_applier
+description: "Steam Deck app to enable LSFG-VK for Heroic Games Launcher games"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State management
+  flutter_bloc: ^8.1.6
+  
+  # Error handling
+  dartz: ^0.10.1
+  
+  # Code generation annotations
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  
+  # Navigation
+  go_router: ^14.6.2
+  
+  # File paths
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  
+  # Date formatting
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  
+  # Code generation
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
