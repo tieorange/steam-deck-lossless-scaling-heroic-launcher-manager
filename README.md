@@ -150,13 +150,13 @@ To build the Linux version on a MacBook with Apple Silicon (M1/M2/M3):
 
 2. **Run the Build Script**:
    ```bash
-   ./build_flatpak.sh
+   ./build_linux_on_mac.sh
    ```
-   *Note: This script uses a Docker container to cross-compile the Linux binary and package it as a Flatpak. The first run may take several minutes to download dependencies.*
+   *Note: This script uses a Docker container to cross-compile the Linux binary (x64) and packages it as a ZIP file. The first run may take several minutes to download dependencies.*
 
-   **Troubleshooting**:
-   - If you see `bwrap: prctl(PR_SET_SECCOMP): Invalid argument`: This is a known issue with Flatpak builds inside Docker on M-chips due to seccomp filtering in emulation.
-   - **Workaround**: Try creating a standard Linux binary instead using `./build_linux_on_mac.sh` (if available), or build directly on the Steam Deck.
+   **Output**:
+   - The script produces `releases/heroic_lsfg_applier_linux_x64.zip`.
+   - Tranfser this file to your Steam Deck, unzip, and run the binary.
 
 ### Building Flatpak
 
