@@ -9,61 +9,71 @@ import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repo
 class MockGameRepository implements GameRepository {
   final List<Game> _mockGames = [
     const Game(
-      appName: 'cyberpunk2077',
+      id: 'heroic:cyberpunk2077',
+      internalId: 'cyberpunk2077',
       title: 'Cyberpunk 2077',
       iconPath: null,
       hasLsfgEnabled: false,
     ),
     const Game(
-      appName: 'elden_ring',
+      id: 'heroic:elden_ring',
+      internalId: 'elden_ring',
       title: 'Elden Ring',
       iconPath: null,
       hasLsfgEnabled: false,
     ),
     const Game(
-      appName: 'witcher3',
+      id: 'heroic:witcher3',
+      internalId: 'witcher3',
       title: 'The Witcher 3: Wild Hunt',
       iconPath: null,
       hasLsfgEnabled: true,
     ),
     const Game(
-      appName: 'baldurs_gate_3',
+      id: 'heroic:baldurs_gate_3',
+      internalId: 'baldurs_gate_3',
       title: "Baldur's Gate 3",
       iconPath: null,
       hasLsfgEnabled: false,
     ),
     const Game(
-      appName: 'hogwarts_legacy',
+      id: 'heroic:hogwarts_legacy',
+      internalId: 'hogwarts_legacy',
       title: 'Hogwarts Legacy',
       iconPath: null,
       hasLsfgEnabled: true,
     ),
     const Game(
-      appName: 'starfield',
+      id: 'heroic:starfield',
+      internalId: 'starfield',
       title: 'Starfield',
       iconPath: null,
       hasLsfgEnabled: false,
     ),
     const Game(
-      appName: 'red_dead_redemption_2',
+      id: 'heroic:red_dead_redemption_2',
+      internalId: 'red_dead_redemption_2',
       title: 'Red Dead Redemption 2',
       iconPath: null,
       hasLsfgEnabled: false,
     ),
     const Game(
-      appName: 'horizon_zero_dawn',
+      id: 'heroic:horizon_zero_dawn',
+      internalId: 'horizon_zero_dawn',
       title: 'Horizon Zero Dawn',
       iconPath: null,
       hasLsfgEnabled: true,
     ),
     const Game(
-      appName: 'death_stranding',
+      id: 'heroic:death_stranding',
+      internalId: 'death_stranding',
       title: 'Death Stranding',
       iconPath: null,
       hasLsfgEnabled: false,
     ),
     const Game(
-      appName: 'god_of_war',
+      id: 'heroic:god_of_war',
+      internalId: 'god_of_war',
       title: 'God of War',
       iconPath: null,
       hasLsfgEnabled: false,
@@ -76,7 +86,7 @@ class MockGameRepository implements GameRepository {
   MockGameRepository() {
     // Initialize from mock games
     for (final game in _mockGames) {
-      _lsfgStatus[game.appName] = game.hasLsfgEnabled;
+      _lsfgStatus[game.id] = game.hasLsfgEnabled;
     }
   }
   
@@ -87,7 +97,7 @@ class MockGameRepository implements GameRepository {
     
     final games = _mockGames.map((game) {
       return game.copyWith(
-        hasLsfgEnabled: _lsfgStatus[game.appName] ?? game.hasLsfgEnabled,
+        hasLsfgEnabled: _lsfgStatus[game.id] ?? game.hasLsfgEnabled,
       );
     }).toList();
     
@@ -98,22 +108,22 @@ class MockGameRepository implements GameRepository {
   }
   
   @override
-  Future<Result<Unit>> applyLsfgToGames(List<String> appNames) async {
+  Future<Result<Unit>> applyLsfgToGames(List<String> ids) async {
     await Future.delayed(const Duration(milliseconds: 300));
     
-    for (final appName in appNames) {
-      _lsfgStatus[appName] = true;
+    for (final id in ids) {
+      _lsfgStatus[id] = true;
     }
     
     return const Right(unit);
   }
   
   @override
-  Future<Result<Unit>> removeLsfgFromGames(List<String> appNames) async {
+  Future<Result<Unit>> removeLsfgFromGames(List<String> ids) async {
     await Future.delayed(const Duration(milliseconds: 300));
     
-    for (final appName in appNames) {
-      _lsfgStatus[appName] = false;
+    for (final id in ids) {
+      _lsfgStatus[id] = false;
     }
     
     return const Right(unit);
