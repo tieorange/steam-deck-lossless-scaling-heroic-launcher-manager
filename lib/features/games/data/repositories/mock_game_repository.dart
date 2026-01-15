@@ -78,6 +78,40 @@ class MockGameRepository implements GameRepository {
       iconPath: null,
       hasLsfgEnabled: false,
     ),
+    // Lutris Games
+    const Game(
+      id: 'lutris:league-of-legends',
+      internalId: 'league-of-legends',
+      title: 'League of Legends',
+      type: GameType.lutris,
+      iconPath: null,
+      hasLsfgEnabled: true,
+    ),
+    const Game(
+      id: 'lutris:overwatch-2',
+      internalId: 'overwatch-2',
+      title: 'Overwatch 2',
+      type: GameType.lutris,
+      iconPath: null,
+      hasLsfgEnabled: false,
+    ),
+    // OGI Games
+    const Game(
+      id: 'ogi:123456',
+      internalId: '123456',
+      title: 'Super OGI Game',
+      type: GameType.ogi,
+      iconPath: null,
+      hasLsfgEnabled: false,
+    ),
+    const Game(
+      id: 'ogi:789012',
+      internalId: '789012',
+      title: 'Another OGI Title',
+      type: GameType.ogi,
+      iconPath: null,
+      hasLsfgEnabled: false,
+    ),
   ];
   
   // Track LSFG status in memory for mock

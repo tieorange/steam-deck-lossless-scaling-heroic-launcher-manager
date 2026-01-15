@@ -62,46 +62,31 @@ class LoggerService {
     log(fullMessage);
   }
   
-  /// Exports logs to the user's Desktop directory
+  /// Exports logs using a system save dialog
   Future<String> exportLogs() async {
     if (_logFile == null || !await _logFile!.exists()) {
       return 'No logs found to export.';
     }
     
     try {
-      String? home;
-      if (Platform.isMacOS || Platform.isLinux) {
-        home = Platform.environment['HOME'];
-      } else if (Platform.isWindows) {
-        home = Platform.environment['UserProfile'];
-      }
-      
-      if (home == null) {
-        return 'Could not determine Home directory for export.';
-      }
-      
-      final desktopPath = '$home/Desktop';
-      final desktopDir = Directory(desktopPath);
-      
-      // Fallback to Downloads if Desktop doesn't exist
-      String targetDir = desktopPath;
-      if (!await desktopDir.exists()) {
-         final downloadPath = '$home/Downloads';
-         if (await Directory(downloadPath).exists()) {
-           targetDir = downloadPath;
-         } else {
-           // Fallback to Documents provided by path_provider
-           final docs = await getApplicationDocumentsDirectory();
-           targetDir = docs.path;
-         }
-      }
-      
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final targetPath = '$targetDir/heroic_lsfg_logs_$timestamp.txt';
+      final defaultName = 'heroic_lsfg_logs_$timestamp.txt';
       
-      await _logFile!.copy(targetPath);
-      return 'Logs exported to: $targetPath';
+      final String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Logs As',
+        fileName: defaultName,
+        type: FileType.custom,
+        allowedExtensions: ['txt'],
+      );
+      
+      if (outputFile == null) {
+        return 'Export cancelled by user.';
+      }
+      
+      await _logFile!.copy(outputFile);
+      return 'Logs exported to: $outputFile';
     } catch (e) {
+      debugPrint('Export failed: $e'); // Keep debugPrint for internal error
       return 'Failed to export logs: $e';
     }
   }
