@@ -4,6 +4,8 @@ import 'package:path/path.dart' as p;
 import '../../../../core/platform/platform_service.dart';
 import '../../domain/entities/game_entity.dart';
 
+import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
+
 class LutrisDatasource {
   final PlatformService _platformService;
 
@@ -57,12 +59,12 @@ class LutrisDatasource {
             }
           } catch (e) {
             // Skip malformed
-            print('Error parsing lutris file ${entity.path}: $e');
+            LoggerService.instance.log('Error parsing lutris file ${entity.path}: $e');
           }
         }
       }
     } catch (e) {
-      print('Error listing Lutris games: $e');
+      LoggerService.instance.log('Error listing Lutris games: $e');
     }
     return games;
   }

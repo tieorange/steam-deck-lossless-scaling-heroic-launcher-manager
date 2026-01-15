@@ -7,6 +7,7 @@ import 'package:heroic_lsfg_applier/features/games/presentation/widgets/game_car
 import 'package:heroic_lsfg_applier/features/games/presentation/widgets/games_action_bar.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/widgets/games_search_bar.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/widgets/games_states.dart';
+import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
 
 /// Main page showing list of Heroic games
 class GamesPage extends StatefulWidget {
@@ -46,6 +47,15 @@ class _GamesPageState extends State<GamesPage> {
             ],
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.bug_report),
+              tooltip: 'Export Logs',
+              onPressed: () async {
+                 final messenger = ScaffoldMessenger.of(context);
+                 final result = await LoggerService.instance.exportLogs();
+                 messenger.showSnackBar(SnackBar(content: Text(result)));
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh',

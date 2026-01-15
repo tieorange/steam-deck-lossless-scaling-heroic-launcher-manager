@@ -12,7 +12,11 @@ import 'package:heroic_lsfg_applier/features/games/data/repositories/mock_game_r
 import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_cubit.dart';
 
-void main() {
+import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await LoggerService.instance.init();
   runApp(const HeroicLsfgApp());
 }
 

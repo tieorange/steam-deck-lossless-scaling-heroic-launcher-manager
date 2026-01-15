@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
 import 'package:heroic_lsfg_applier/core/error/failures.dart';
 import 'package:heroic_lsfg_applier/core/platform/platform_service.dart';
 import 'package:heroic_lsfg_applier/features/games/data/models/game_config_model.dart';
@@ -13,6 +12,7 @@ import 'package:heroic_lsfg_applier/features/games/data/datasources/lutris_datas
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
+import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
 
 /// Implementation of GameRepository using local file system
 class GameRepositoryImpl implements GameRepository {
@@ -23,18 +23,18 @@ class GameRepositoryImpl implements GameRepository {
   @override
   Future<Result<List<Game>>> getGames() async {
     try {
-      debugPrint('[GameRepository] getGames called');
+      LoggerService.instance.log('[GameRepository] getGames called');
       final games = <Game>[];
       bool anySourceFound = false;
 
       // 1. Fetch Heroic Games
       try {
-        debugPrint('[GameRepository] Checking Heroic config: ${_platformService.gameConfigPath}');
+        LoggerService.instance.log('[GameRepository] Checking Heroic config: ${_platformService.gameConfigPath}');
         final gameConfigDir = Directory(_platformService.gameConfigPath);
         
         if (await gameConfigDir.exists()) {
           anySourceFound = true;
-          debugPrint('[GameRepository] Heroic directory exists, listing files...');
+          LoggerService.instance.log('[GameRepository] Heroic directory exists, listing files...');
           
           await for (final entity in gameConfigDir.list()) {
             if (entity is File && entity.path.endsWith('.json')) {
@@ -45,48 +45,48 @@ class GameRepositoryImpl implements GameRepository {
             }
           }
         } else {
-          debugPrint('[GameRepository] Heroic config directory does not exist');
+          LoggerService.instance.log('[GameRepository] Heroic config directory does not exist');
         }
       } catch (e) {
-        debugPrint('[GameRepository] Error loading Heroic games: $e');
+        LoggerService.instance.log('[GameRepository] Error loading Heroic games: $e');
       }
 
       // 2. Fetch OGI Games
       try {
-        debugPrint('[GameRepository] Checking OGI library: ${_platformService.ogiLibraryPath}');
+        LoggerService.instance.log('[GameRepository] Checking OGI library: ${_platformService.ogiLibraryPath}');
         final ogiDatasource = OgiDatasource(_platformService);
         final ogiGames = await ogiDatasource.getOgiGames();
         if (ogiGames.isNotEmpty) {
           anySourceFound = true;
           games.addAll(ogiGames);
-          debugPrint('[GameRepository] Added ${ogiGames.length} OGI games');
+          LoggerService.instance.log('[GameRepository] Added ${ogiGames.length} OGI games');
         } else {
-           debugPrint('[GameRepository] No OGI games found');
+           LoggerService.instance.log('[GameRepository] No OGI games found');
         }
       } catch (e) {
-        debugPrint('[GameRepository] Error loading OGI games: $e');
+        LoggerService.instance.log('[GameRepository] Error loading OGI games: $e');
       }
 
       // 3. Fetch Lutris Games
       try {
-        debugPrint('[GameRepository] Checking Lutris config: ${_platformService.lutrisConfigPath}');
+        LoggerService.instance.log('[GameRepository] Checking Lutris config: ${_platformService.lutrisConfigPath}');
         final lutrisDatasource = LutrisDatasource(_platformService);
         final lutrisGames = await lutrisDatasource.getLutrisGames();
         if (lutrisGames.isNotEmpty) {
           anySourceFound = true;
           games.addAll(lutrisGames);
-          debugPrint('[GameRepository] Added ${lutrisGames.length} Lutris games');
+          LoggerService.instance.log('[GameRepository] Added ${lutrisGames.length} Lutris games');
         } else {
-           debugPrint('[GameRepository] No Lutris games found');
+           LoggerService.instance.log('[GameRepository] No Lutris games found');
         }
       } catch (e) {
-        debugPrint('[GameRepository] Error loading Lutris games: $e');
+        LoggerService.instance.log('[GameRepository] Error loading Lutris games: $e');
       }
       
-      debugPrint('[GameRepository] Total games parsed: ${games.length}');
+      LoggerService.instance.log('[GameRepository] Total games parsed: ${games.length}');
       
       if (!anySourceFound && games.isEmpty) {
-        debugPrint('[GameRepository] No game sources found');
+        LoggerService.instance.log('[GameRepository] No game sources found');
         return const Left(NoGamesFoundFailure());
       }
       
@@ -95,8 +95,8 @@ class GameRepositoryImpl implements GameRepository {
       
       return Right(games);
     } catch (e, stackTrace) {
-      debugPrint('[GameRepository] Error reading games: $e');
-      debugPrint('[GameRepository] Stack trace: $stackTrace');
+      LoggerService.instance.log('[GameRepository] Error reading games: $e');
+      LoggerService.instance.log('[GameRepository] Stack trace: $stackTrace');
       return Left(FileSystemFailure('Failed to read games: $e'));
     }
   }
@@ -155,16 +155,16 @@ class GameRepositoryImpl implements GameRepository {
   @override
   Future<Result<Unit>> applyLsfgToGames(List<String> appNames) async {
     try {
-      debugPrint('[GameRepository] applyLsfgToGames called for: $appNames');
+      LoggerService.instance.log('[GameRepository] applyLsfgToGames called for: $appNames');
       for (final appName in appNames) {
-        debugPrint('[GameRepository] Modifying config for: $appName');
+        LoggerService.instance.log('[GameRepository] Modifying config for: $appName');
         await _modifyGameConfig(appName, addLsfg: true);
       }
-      debugPrint('[GameRepository] Successfully applied LSFG to all games');
+      LoggerService.instance.log('[GameRepository] Successfully applied LSFG to all games');
       return const Right(unit);
     } catch (e, stackTrace) {
-      debugPrint('[GameRepository] Failed to apply LSFG: $e');
-      debugPrint('[GameRepository] Stack trace: $stackTrace');
+      LoggerService.instance.log('[GameRepository] Failed to apply LSFG: $e');
+      LoggerService.instance.log('[GameRepository] Stack trace: $stackTrace');
       return Left(FileSystemFailure('Failed to apply LSFG: $e'));
     }
   }
@@ -172,16 +172,16 @@ class GameRepositoryImpl implements GameRepository {
   @override
   Future<Result<Unit>> removeLsfgFromGames(List<String> appNames) async {
     try {
-      debugPrint('[GameRepository] removeLsfgFromGames called for: $appNames');
+      LoggerService.instance.log('[GameRepository] removeLsfgFromGames called for: $appNames');
       for (final appName in appNames) {
-        debugPrint('[GameRepository] Modifying config for: $appName');
+        LoggerService.instance.log('[GameRepository] Modifying config for: $appName');
         await _modifyGameConfig(appName, addLsfg: false);
       }
-      debugPrint('[GameRepository] Successfully removed LSFG from all games');
+      LoggerService.instance.log('[GameRepository] Successfully removed LSFG from all games');
       return const Right(unit);
     } catch (e, stackTrace) {
-      debugPrint('[GameRepository] Failed to remove LSFG: $e');
-      debugPrint('[GameRepository] Stack trace: $stackTrace');
+      LoggerService.instance.log('[GameRepository] Failed to remove LSFG: $e');
+      LoggerService.instance.log('[GameRepository] Stack trace: $stackTrace');
       return Left(FileSystemFailure('Failed to remove LSFG: $e'));
     }
   }
@@ -191,7 +191,7 @@ class GameRepositoryImpl implements GameRepository {
     if (parts.length < 2) {
        // Check if it's a legacy ID (probably Heroic if no prefix)
        // Or throw. Assuming new format is enforced.
-       debugPrint('Invalid Game ID format: $id. Assuming legacy/Heroic.');
+       LoggerService.instance.log('Invalid Game ID format: $id. Assuming legacy/Heroic.');
        // If legacy, assume Heroic path
        await _modifyHeroicConfig(id, addLsfg: addLsfg);
        return;
@@ -200,12 +200,12 @@ class GameRepositoryImpl implements GameRepository {
     final source = parts[0];
     final appName = parts.sublist(1).join(':'); // handle colons in name
 
-    debugPrint('[GameRepository] _modifyGameConfig: src=$source, app=$appName (addLsfg: $addLsfg)');
+    LoggerService.instance.log('[GameRepository] _modifyGameConfig: src=$source, app=$appName (addLsfg: $addLsfg)');
 
     if (source == 'heroic') {
        await _modifyHeroicConfig(appName, addLsfg: addLsfg);
     } else if (source == 'ogi') {
-       debugPrint('[GameRepository] Found OGI game, but shortcuts editing not implemented');
+       LoggerService.instance.log('[GameRepository] Found OGI game, but shortcuts editing not implemented');
        throw Exception('LSFG Support for OpenGameInstaller games is not yet implemented (requires Steam Shortcuts editing).');
     } else if (source == 'lutris') {
        await _modifyLutrisConfig(appName, addLsfg: addLsfg);
@@ -254,7 +254,7 @@ class GameRepositoryImpl implements GameRepository {
       final lutrisFile = File(lutrisFilePath);
       
       if (await lutrisFile.exists()) {
-         debugPrint('[GameRepository] Modifying Lutris config: $lutrisFilePath');
+         LoggerService.instance.log('[GameRepository] Modifying Lutris config: $lutrisFilePath');
          try {
            final content = await lutrisFile.readAsString();
            final doc = YamlEditor(content);
@@ -280,9 +280,10 @@ class GameRepositoryImpl implements GameRepository {
            await lutrisFile.writeAsString(doc.toString());
            return;
          } catch (e) {
-           debugPrint('[GameRepository] Failed to update Lutris config: $e');
+           LoggerService.instance.log('[GameRepository] Failed to update Lutris config: $e');
            throw Exception('Failed to update Lutris config: $e');
          }
       }
       throw Exception('Lutris config file not found: $appName');
   }
+}

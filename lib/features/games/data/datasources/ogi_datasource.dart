@@ -3,6 +3,8 @@ import 'dart:io';
 import '../../../../core/platform/platform_service.dart';
 import '../../domain/entities/game_entity.dart';
 
+import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
+
 class OgiDatasource {
   final PlatformService _platformService;
 
@@ -47,12 +49,12 @@ class OgiDatasource {
             }
           } catch (e) {
             // Skip malformed files
-            print('Error parsing OGI file ${entity.path}: $e');
+            LoggerService.instance.log('Error parsing OGI file ${entity.path}: $e');
           }
         }
       }
     } catch (e) {
-      print('Error listing OGI directory: $e');
+      LoggerService.instance.log('Error listing OGI directory: $e');
       throw Exception('Failed to read OGI library: $e');
     }
     
