@@ -15,7 +15,6 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-BUILD_DIR="$PROJECT_DIR/build/linux/x64/release/bundle"
 
 # Installation directory
 INSTALL_DIR="$HOME/.local/share/heroic_lsfg_applier"
@@ -23,9 +22,18 @@ BIN_DIR="$HOME/.local/bin"
 DESKTOP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
 
-# Check if build exists
-if [ ! -d "$BUILD_DIR" ]; then
-    echo "Error: Build not found! Run build_on_deck.sh first."
+# Determine source directory
+if [ -f "$SCRIPT_DIR/heroic_lsfg_applier" ] && [ -d "$SCRIPT_DIR/data" ]; then
+    # We are inside the unzipped bundle (or script was copied here)
+    SOURCE_DIR="$SCRIPT_DIR"
+    echo "Detected installation from current bundle directory."
+elif [ -d "$PROJECT_DIR/build/linux/x64/release/bundle" ]; then
+    # We are in the project structure
+    SOURCE_DIR="$PROJECT_DIR/build/linux/x64/release/bundle"
+    echo "Detected local build directory."
+else
+    echo "Error: Application bundle not found!"
+    echo "Make sure you have built the app or you are running this script from inside the unzipped release folder."
     exit 1
 fi
 
@@ -38,7 +46,7 @@ mkdir -p "$DESKTOP_DIR"
 mkdir -p "$ICON_DIR"
 
 # Copy the app bundle
-cp -r "$BUILD_DIR"/* "$INSTALL_DIR/"
+cp -r "$SOURCE_DIR"/* "$INSTALL_DIR/"
 
 # Create a symlink in bin
 ln -sf "$INSTALL_DIR/heroic_lsfg_applier" "$BIN_DIR/heroic_lsfg_applier"
@@ -57,10 +65,13 @@ StartupWMClass=heroic_lsfg_applier
 EOF
 
 # Copy icon if exists, or create a placeholder
-if [ -f "$PROJECT_DIR/flatpak/icon.png" ]; then
+# Copy icon if exists
+if [ -f "$SOURCE_DIR/icon.png" ]; then
+    cp "$SOURCE_DIR/icon.png" "$ICON_DIR/heroic-lsfg-applier.png"
+elif [ -f "$PROJECT_DIR/flatpak/icon.png" ]; then
     cp "$PROJECT_DIR/flatpak/icon.png" "$ICON_DIR/heroic-lsfg-applier.png"
 else
-    echo -e "${YELLOW}Note: No icon.png found in flatpak/, using default${NC}"
+    echo -e "${YELLOW}Note: No icon.png found, using default${NC}"
 fi
 
 # Update desktop database
