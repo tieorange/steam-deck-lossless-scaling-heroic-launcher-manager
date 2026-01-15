@@ -26,8 +26,8 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_FILE="$PROJECT_ROOT/docker/Dockerfile.flatpak"
 
 # 1. Build the Docker Image
-echo -e "${YELLOW}Step 1: Building Docker image...${NC}"
-docker build -t flutter-flatpak-builder -f "$DOCKER_FILE" "$PROJECT_ROOT/docker"
+echo -e "${YELLOW}Step 1: Building Docker image (forcing amd64)...${NC}"
+docker build --platform linux/amd64 -t flutter-flatpak-builder -f "$DOCKER_FILE" "$PROJECT_ROOT/docker"
 
 # 2. Run the Build Container
 echo -e "${YELLOW}Step 2: Building App and Flatpak...${NC}"
@@ -37,7 +37,7 @@ echo "Please be patient."
 # We use a volume for flatpak-cache to speed up subsequent builds
 docker volume create flatpak-cache
 
-docker run --privileged --rm \
+docker run --platform linux/amd64 --privileged --security-opt seccomp=unconfined --rm \
     -v "$PROJECT_ROOT:/app" \
     -v flatpak-cache:/var/lib/flatpak \
     flutter-flatpak-builder \

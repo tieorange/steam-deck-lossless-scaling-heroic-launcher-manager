@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.example.heroic_lsfg_applier</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Heroic LSFG Applier</name>
+  <summary>Enable Lossless Scaling frame generation for Heroic games on Steam Deck</summary>
+  
+  <description>
+    <p>
+      Heroic LSFG Applier makes it easy to enable the LSFG-VK Decky plugin 
+      (Lossless Scaling frame generation via Vulkan layer) for games installed 
+      through Heroic Games Launcher on your Steam Deck.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>View all games installed via Heroic Games Launcher</li>
+      <li>Apply or remove LSFG frame generation to selected games</li>
+      <li>Create backups before making any changes</li>
+      <li>Restore from backups if needed</li>
+      <li>Search and filter your game library</li>
+    </ul>
+    <p>
+      This app modifies game configuration files to add the required environment 
+      variable for LSFG-VK. Always create a backup before applying changes!
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">org.example.heroic_lsfg_applier.desktop</launchable>
+  
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main game list with LSFG status</caption>
+      <image>https://example.com/screenshot1.png</image>
+    </screenshot>
+  </screenshots>
+  
+  <url type="homepage">https://github.com/example/heroic-lsfg-applier</url>
+  <url type="bugtracker">https://github.com/example/heroic-lsfg-applier/issues</url>
+  
+  <developer_name>Example Developer</developer_name>
+  
+  <provides>
+    <binary>heroic_lsfg_applier</binary>
+  </provides>
+  
+  <releases>
+    <release version="1.0.0" date="2026-01-14">
+      <description>
+        <p>Initial release with core features:</p>
+        <ul>
+          <li>Game list with LSFG status indicators</li>
+          <li>Apply/remove LSFG to selected games</li>
+          <li>Backup and restore functionality</li>
+          <li>Search and filter games</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  
+  <content_rating type="oars-1.1" />
+  
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>gamepad</control>
+  </supports>
+  
+  <recommends>
+    <display_length compare="ge">360</display_length>
+  </recommends>
+</component>

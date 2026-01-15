@@ -1,5 +1,5 @@
-# Use Ubuntu as the base image
-FROM ubuntu:22.04
+# Use Ubuntu as the base image (forcing amd64 for Steam Deck compatibility)
+FROM --platform=linux/amd64 ubuntu:22.04
 
 # Avoid prompts
 ENV DEBIAN_FRONTEND=noninteractive

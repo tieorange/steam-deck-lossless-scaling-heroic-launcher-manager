@@ -1,0 +1,42 @@
+app-id: org.example.heroic_lsfg_applier
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: heroic_lsfg_applier
+
+finish-args:
+  # Wayland and X11 for display
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  
+  # GPU for OpenGL rendering
+  - --device=dri
+  
+  # Access to Heroic Games Launcher config (Flatpak version)
+  - --filesystem=~/.var/app/com.heroicgameslauncher.hgl/config/heroic:rw
+  
+  # Access to Heroic Games Launcher config (native version)
+  - --filesystem=~/.config/heroic:rw
+  
+  # Our app's config directory for backups
+  - --filesystem=~/.config/heroic_lsfg_applier:create
+
+modules:
+  - name: heroic_lsfg_applier
+    buildsystem: simple
+    build-commands:
+      # Build Flutter app
+      - flutter build linux --release
+      # Install the built app
+      - mkdir -p /app/bin
+      - cp -r build/linux/x64/release/bundle/* /app/bin/
+      # Install desktop file
+      - install -Dm644 flatpak/org.example.heroic_lsfg_applier.desktop /app/share/applications/org.example.heroic_lsfg_applier.desktop
+      # Install icon
+      - install -Dm644 flatpak/icon.png /app/share/icons/hicolor/256x256/apps/org.example.heroic_lsfg_applier.png
+      # Install metainfo
+      - install -Dm644 flatpak/org.example.heroic_lsfg_applier.metainfo.xml /app/share/metainfo/org.example.heroic_lsfg_applier.metainfo.xml
+    sources:
+      - type: dir
+        path: .

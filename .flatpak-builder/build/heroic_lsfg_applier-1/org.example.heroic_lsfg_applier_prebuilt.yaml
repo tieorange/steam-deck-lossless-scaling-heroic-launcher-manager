@@ -1,0 +1,36 @@
+app-id: org.example.heroic_lsfg_applier
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: heroic_lsfg_applier
+
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  - --filesystem=~/.var/app/com.heroicgameslauncher.hgl/config/heroic:rw
+  - --filesystem=~/.config/heroic:rw
+  - --filesystem=~/.config/heroic_lsfg_applier:create
+
+modules:
+  - name: heroic_lsfg_applier
+    buildsystem: simple
+    build-commands:
+      # Create installation directories
+      - mkdir -p /app/bin
+      - mkdir -p /app/share/applications
+      - mkdir -p /app/share/icons/hicolor/256x256/apps
+      - mkdir -p /app/share/metainfo
+      
+      # Copy the pre-built binary and assets
+      # Note: We assume the source structure is preserved
+      - cp -r build/linux/x64/release/bundle/* /app/bin/
+      
+      # Install desktop file and icons
+      - install -Dm644 flatpak/org.example.heroic_lsfg_applier.desktop /app/share/applications/org.example.heroic_lsfg_applier.desktop
+      - install -Dm644 flatpak/icon.png /app/share/icons/hicolor/256x256/apps/org.example.heroic_lsfg_applier.png
+      - install -Dm644 flatpak/org.example.heroic_lsfg_applier.metainfo.xml /app/share/metainfo/org.example.heroic_lsfg_applier.metainfo.xml
+    sources:
+      - type: dir
+        path: .
