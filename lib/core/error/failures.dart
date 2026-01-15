@@ -34,5 +34,10 @@ class BackupFailure extends Failure {
   const BackupFailure(super.message);
 }
 
-/// Type alias for Either with Failure
+/// Cache/Settings related errors
+class CacheFailure extends Failure {
+  const CacheFailure(super.message);
+}
+
+/// Type alias for Result
 typedef Result<T> = Either<Failure, T>;

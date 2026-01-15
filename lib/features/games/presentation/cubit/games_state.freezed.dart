@@ -24,6 +24,7 @@ mixin _$GamesState {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )
     loaded,
@@ -36,6 +37,7 @@ mixin _$GamesState {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,
@@ -48,6 +50,7 @@ mixin _$GamesState {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,
@@ -145,6 +148,7 @@ class _$GamesLoadingImpl implements GamesLoading {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )
     loaded,
@@ -161,6 +165,7 @@ class _$GamesLoadingImpl implements GamesLoading {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,
@@ -177,6 +182,7 @@ class _$GamesLoadingImpl implements GamesLoading {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,
@@ -239,6 +245,7 @@ abstract class _$$GamesLoadedImplCopyWith<$Res> {
     List<Game> games,
     List<Game> filteredGames,
     String searchQuery,
+    LsfgFilter lsfgFilter,
     bool isApplying,
   });
 }
@@ -260,6 +267,7 @@ class __$$GamesLoadedImplCopyWithImpl<$Res>
     Object? games = null,
     Object? filteredGames = null,
     Object? searchQuery = null,
+    Object? lsfgFilter = null,
     Object? isApplying = null,
   }) {
     return _then(
@@ -276,6 +284,10 @@ class __$$GamesLoadedImplCopyWithImpl<$Res>
             ? _value.searchQuery
             : searchQuery // ignore: cast_nullable_to_non_nullable
                   as String,
+        lsfgFilter: null == lsfgFilter
+            ? _value.lsfgFilter
+            : lsfgFilter // ignore: cast_nullable_to_non_nullable
+                  as LsfgFilter,
         isApplying: null == isApplying
             ? _value.isApplying
             : isApplying // ignore: cast_nullable_to_non_nullable
@@ -292,6 +304,7 @@ class _$GamesLoadedImpl implements GamesLoaded {
     required final List<Game> games,
     required final List<Game> filteredGames,
     this.searchQuery = '',
+    this.lsfgFilter = LsfgFilter.all,
     this.isApplying = false,
   }) : _games = games,
        _filteredGames = filteredGames;
@@ -317,11 +330,14 @@ class _$GamesLoadedImpl implements GamesLoaded {
   final String searchQuery;
   @override
   @JsonKey()
+  final LsfgFilter lsfgFilter;
+  @override
+  @JsonKey()
   final bool isApplying;
 
   @override
   String toString() {
-    return 'GamesState.loaded(games: $games, filteredGames: $filteredGames, searchQuery: $searchQuery, isApplying: $isApplying)';
+    return 'GamesState.loaded(games: $games, filteredGames: $filteredGames, searchQuery: $searchQuery, lsfgFilter: $lsfgFilter, isApplying: $isApplying)';
   }
 
   @override
@@ -336,6 +352,8 @@ class _$GamesLoadedImpl implements GamesLoaded {
             ) &&
             (identical(other.searchQuery, searchQuery) ||
                 other.searchQuery == searchQuery) &&
+            (identical(other.lsfgFilter, lsfgFilter) ||
+                other.lsfgFilter == lsfgFilter) &&
             (identical(other.isApplying, isApplying) ||
                 other.isApplying == isApplying));
   }
@@ -346,6 +364,7 @@ class _$GamesLoadedImpl implements GamesLoaded {
     const DeepCollectionEquality().hash(_games),
     const DeepCollectionEquality().hash(_filteredGames),
     searchQuery,
+    lsfgFilter,
     isApplying,
   );
 
@@ -365,12 +384,13 @@ class _$GamesLoadedImpl implements GamesLoaded {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )
     loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(games, filteredGames, searchQuery, isApplying);
+    return loaded(games, filteredGames, searchQuery, lsfgFilter, isApplying);
   }
 
   @override
@@ -381,12 +401,19 @@ class _$GamesLoadedImpl implements GamesLoaded {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,
     TResult? Function(String message)? error,
   }) {
-    return loaded?.call(games, filteredGames, searchQuery, isApplying);
+    return loaded?.call(
+      games,
+      filteredGames,
+      searchQuery,
+      lsfgFilter,
+      isApplying,
+    );
   }
 
   @override
@@ -397,6 +424,7 @@ class _$GamesLoadedImpl implements GamesLoaded {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,
@@ -404,7 +432,7 @@ class _$GamesLoadedImpl implements GamesLoaded {
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(games, filteredGames, searchQuery, isApplying);
+      return loaded(games, filteredGames, searchQuery, lsfgFilter, isApplying);
     }
     return orElse();
   }
@@ -449,12 +477,14 @@ abstract class GamesLoaded implements GamesState {
     required final List<Game> games,
     required final List<Game> filteredGames,
     final String searchQuery,
+    final LsfgFilter lsfgFilter,
     final bool isApplying,
   }) = _$GamesLoadedImpl;
 
   List<Game> get games;
   List<Game> get filteredGames;
   String get searchQuery;
+  LsfgFilter get lsfgFilter;
   bool get isApplying;
 
   /// Create a copy of GamesState
@@ -539,6 +569,7 @@ class _$GamesErrorImpl implements GamesError {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )
     loaded,
@@ -555,6 +586,7 @@ class _$GamesErrorImpl implements GamesError {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,
@@ -571,6 +603,7 @@ class _$GamesErrorImpl implements GamesError {
       List<Game> games,
       List<Game> filteredGames,
       String searchQuery,
+      LsfgFilter lsfgFilter,
       bool isApplying,
     )?
     loaded,

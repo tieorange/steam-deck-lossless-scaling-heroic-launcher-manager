@@ -3,6 +3,8 @@ import 'package:heroic_lsfg_applier/features/games/domain/entities/game_entity.d
 
 part 'games_state.freezed.dart';
 
+enum LsfgFilter { all, enabled, disabled }
+
 /// State for the games list page
 @freezed
 class GamesState with _$GamesState {
@@ -14,7 +16,9 @@ class GamesState with _$GamesState {
     required List<Game> games,
     required List<Game> filteredGames,
     @Default('') String searchQuery,
+    @Default(LsfgFilter.all) LsfgFilter lsfgFilter,
     @Default(false) bool isApplying,
+
   }) = GamesLoaded;
   
   /// Error state

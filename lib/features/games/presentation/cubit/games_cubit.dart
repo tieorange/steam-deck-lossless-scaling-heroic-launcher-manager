@@ -1,13 +1,23 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
+import 'package:heroic_lsfg_applier/features/backup/domain/repositories/backup_repository.dart';
+import 'package:heroic_lsfg_applier/features/settings/domain/repositories/settings_repository.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_state.dart';
+import 'package:heroic_lsfg_applier/features/settings/domain/entities/settings_entity.dart';
 import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
+import 'package:heroic_lsfg_applier/features/games/domain/entities/game_entity.dart';
 
 /// Cubit for managing games list state
 class GamesCubit extends Cubit<GamesState> {
   final GameRepository _gameRepository;
+  final SettingsRepository _settingsRepository;
+  final BackupRepository _backupRepository;
   
-  GamesCubit(this._gameRepository) : super(const GamesState.loading());
+  GamesCubit(
+    this._gameRepository,
+    this._settingsRepository,
+    this._backupRepository,
+  ) : super(const GamesState.loading());
   
   /// Load all games from Heroic config
   Future<void> loadGames() async {
@@ -28,13 +38,47 @@ class GamesCubit extends Cubit<GamesState> {
   void search(String query) {
     final currentState = state;
     if (currentState is GamesLoaded) {
-      final filtered = currentState.games.where((game) {
-        return game.title.toLowerCase().contains(query.toLowerCase()) ||
-               game.internalId.toLowerCase().contains(query.toLowerCase());
-      }).toList();
+      _applyFilters(currentState.games, query, currentState.lsfgFilter);
+    }
+  }
+
+  /// Filter games by LSFG status
+  void filterByLsfg(LsfgFilter filter) {
+    final currentState = state;
+    if (currentState is GamesLoaded) {
+      _applyFilters(currentState.games, currentState.searchQuery, filter);
+    }
+  }
+
+  void _applyFilters(List<Game> games, String query, LsfgFilter filter) {
+    final filtered = games.where((game) {
+      // Search filter
+      final matchesSearch = query.isEmpty ||
+          game.title.toLowerCase().contains(query.toLowerCase()) ||
+          game.internalId.toLowerCase().contains(query.toLowerCase());
       
+      // LSFG status filter
+      bool matchesLsfg = true;
+      switch (filter) {
+        case LsfgFilter.all:
+          matchesLsfg = true;
+          break;
+        case LsfgFilter.enabled:
+          matchesLsfg = game.hasLsfgEnabled;
+          break;
+        case LsfgFilter.disabled:
+          matchesLsfg = !game.hasLsfgEnabled;
+          break;
+      }
+      
+      return matchesSearch && matchesLsfg;
+    }).toList();
+
+    final currentState = state;
+    if (currentState is GamesLoaded) {
       emit(currentState.copyWith(
         searchQuery: query,
+        lsfgFilter: filter,
         filteredGames: filtered,
       ));
     }
@@ -127,6 +171,25 @@ class GamesCubit extends Cubit<GamesState> {
       }
       
       emit(currentState.copyWith(isApplying: true));
+      
+
+      
+      // Auto-backup if enabled
+      try {
+        final settingsResult = await _settingsRepository.getSettings();
+        final shouldBackup = settingsResult.getOrElse(() => const Settings()).autoBackup;
+        
+        if (shouldBackup) {
+          LoggerService.instance.log('[GamesCubit] Auto-backup enabled, creating backup...');
+          final backupResult = await _backupRepository.createBackup();
+          backupResult.fold(
+            (failure) => LoggerService.instance.log('[GamesCubit] Auto-backup failed: ${failure.message}'), // Non-fatal?
+            (backup) => LoggerService.instance.log('[GamesCubit] Auto-backup created: ${backup.name}'),
+          );
+        }
+      } catch (e) {
+        LoggerService.instance.log('[GamesCubit] Error checking settings for auto-backup: $e');
+      }
       
       LoggerService.instance.log('[GamesCubit] Calling repository.applyLsfgToGames...');
       final result = await _gameRepository.applyLsfgToGames(selectedIds);

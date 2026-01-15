@@ -32,6 +32,11 @@ class AppShell extends StatelessWidget {
             selectedIcon: Icon(Icons.backup, size: SteamDeckConstants.smallIconSize + 4),
             label: 'Backup',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined, size: SteamDeckConstants.smallIconSize + 4),
+            selectedIcon: Icon(Icons.settings, size: SteamDeckConstants.smallIconSize + 4),
+            label: 'Settings',
+          ),
         ],
       ),
     );

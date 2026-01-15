@@ -66,6 +66,7 @@ class _GamesPageState extends State<GamesPage> {
         body: Column(
           children: [
             GamesSearchBar(controller: _searchController),
+            _buildFilterChips(context),
             Expanded(
               child: TabBarView(
                 children: [
@@ -91,7 +92,7 @@ class _GamesPageState extends State<GamesPage> {
         return state.when(
           loading: () => const GamesLoadingState(),
           error: (message) => GamesErrorState(message: message),
-          loaded: (games, filteredGames, searchQuery, isApplying) {
+          loaded: (games, filteredGames, searchQuery, lsfgFilter, isApplying) {
             if (isApplying) {
               return const GamesLoadingState(message: 'Applying changes...');
             }
@@ -138,6 +139,34 @@ class _GamesPageState extends State<GamesPage> {
           FilledButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
+              
+              // Check for OGI games
+              final hasOgiSelected = cubit.state.maybeWhen(
+                loaded: (games, _, __, ___, ____) => games
+                    .any((g) => g.isSelected && g.type == GameType.ogi),
+                orElse: () => false,
+              );
+              
+              if (hasOgiSelected) {
+                if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Applying LSFG to OpenGameInstaller games is not yet supported.'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                      action: SnackBarAction(
+                        label: 'Deselect OGI', 
+                        textColor: Colors.white,
+                        onPressed: () {
+                           // Logic to deselect OGI could be added to cubit, 
+                           // but for now user has to do it manually or we apply to others.
+                        }
+                      ),
+                    ),
+                  );
+                }
+                return;
+              }
+
               final success = await cubit.applyLsfgToSelected();
               if (context.mounted) {
                 if (success) {
@@ -201,6 +230,80 @@ class _GamesPageState extends State<GamesPage> {
             child: const Text('Remove'),
           ),
         ],
+      ),
+    );
+  }
+  Widget _buildFilterChips(BuildContext context) {
+    return BlocBuilder<GamesCubit, GamesState>(
+      builder: (context, state) {
+        return state.maybeWhen(
+          loaded: (games, filtered, query, filter, isApplying) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  _FilterChip(
+                    label: 'All',
+                    isSelected: filter == LsfgFilter.all,
+                    onSelected: (selected) {
+                      if (selected) context.read<GamesCubit>().filterByLsfg(LsfgFilter.all);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'LSFG Enabled',
+                    isSelected: filter == LsfgFilter.enabled,
+                    onSelected: (selected) {
+                      if (selected) context.read<GamesCubit>().filterByLsfg(LsfgFilter.enabled);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'LSFG Disabled',
+                    isSelected: filter == LsfgFilter.disabled,
+                    onSelected: (selected) {
+                      if (selected) context.read<GamesCubit>().filterByLsfg(LsfgFilter.disabled);
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+          orElse: () => const SizedBox.shrink(),
+        );
+      },
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final ValueChanged<bool> onSelected;
+
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: onSelected,
+      showCheckmark: false,
+      selectedColor: Theme.of(context).colorScheme.primaryContainer,
+      labelStyle: TextStyle(
+        color: isSelected 
+          ? Theme.of(context).colorScheme.primary 
+          : Theme.of(context).colorScheme.onSurface,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
       ),
     );
   }
