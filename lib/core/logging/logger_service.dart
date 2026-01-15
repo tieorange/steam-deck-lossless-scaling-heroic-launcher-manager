@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
 
 class LoggerService {
   static final LoggerService _instance = LoggerService._internal();
