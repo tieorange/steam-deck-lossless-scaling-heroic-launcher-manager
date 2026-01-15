@@ -141,6 +141,23 @@ lib/
 └── main.dart
 ```
 
+### Building Linux App from Mac (M-chip)
+
+To build the Linux version on a MacBook with Apple Silicon (M1/M2/M3):
+
+1. **Install Docker Desktop**: Ensure Docker Desktop for Mac is installed and running.
+   - Go to Settings -> General -> Ensure "Use Rosetta for x86/amd64 emulation on Apple Silicon" is ENABLED.
+
+2. **Run the Build Script**:
+   ```bash
+   ./build_flatpak.sh
+   ```
+   *Note: This script uses a Docker container to cross-compile the Linux binary and package it as a Flatpak. The first run may take several minutes to download dependencies.*
+
+   **Troubleshooting**:
+   - If you see `bwrap: prctl(PR_SET_SECCOMP): Invalid argument`: This is a known issue with Flatpak builds inside Docker on M-chips due to seccomp filtering in emulation.
+   - **Workaround**: Try creating a standard Linux binary instead using `./build_linux_on_mac.sh` (if available), or build directly on the Steam Deck.
+
 ### Building Flatpak
 
 ```bash
