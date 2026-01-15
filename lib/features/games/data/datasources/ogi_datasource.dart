@@ -37,7 +37,8 @@ class OgiDatasource {
               // For now set to false, Repository can update it.
               
               games.add(Game(
-                appName: appName,
+                id: 'ogi:$appName',
+                internalId: appName,
                 title: title,
                 type: GameType.ogi,
                 hasLsfgEnabled: false,

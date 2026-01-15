@@ -17,8 +17,11 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$Game {
-  /// Unique game identifier (from app_name in JSON)
-  String get appName => throw _privateConstructorUsedError;
+  /// Unique game identifier (source:internalId)
+  String get id => throw _privateConstructorUsedError;
+
+  /// Original identifier from source (e.g. appName/slug/appID)
+  String get internalId => throw _privateConstructorUsedError;
 
   /// Display title of the game
   String get title => throw _privateConstructorUsedError;
@@ -47,7 +50,8 @@ abstract class $GameCopyWith<$Res> {
       _$GameCopyWithImpl<$Res, Game>;
   @useResult
   $Res call({
-    String appName,
+    String id,
+    String internalId,
     String title,
     String? iconPath,
     bool hasLsfgEnabled,
@@ -71,7 +75,8 @@ class _$GameCopyWithImpl<$Res, $Val extends Game>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? appName = null,
+    Object? id = null,
+    Object? internalId = null,
     Object? title = null,
     Object? iconPath = freezed,
     Object? hasLsfgEnabled = null,
@@ -80,9 +85,13 @@ class _$GameCopyWithImpl<$Res, $Val extends Game>
   }) {
     return _then(
       _value.copyWith(
-            appName: null == appName
-                ? _value.appName
-                : appName // ignore: cast_nullable_to_non_nullable
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            internalId: null == internalId
+                ? _value.internalId
+                : internalId // ignore: cast_nullable_to_non_nullable
                       as String,
             title: null == title
                 ? _value.title
@@ -119,7 +128,8 @@ abstract class _$$GameImplCopyWith<$Res> implements $GameCopyWith<$Res> {
   @override
   @useResult
   $Res call({
-    String appName,
+    String id,
+    String internalId,
     String title,
     String? iconPath,
     bool hasLsfgEnabled,
@@ -140,7 +150,8 @@ class __$$GameImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? appName = null,
+    Object? id = null,
+    Object? internalId = null,
     Object? title = null,
     Object? iconPath = freezed,
     Object? hasLsfgEnabled = null,
@@ -149,9 +160,13 @@ class __$$GameImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$GameImpl(
-        appName: null == appName
-            ? _value.appName
-            : appName // ignore: cast_nullable_to_non_nullable
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        internalId: null == internalId
+            ? _value.internalId
+            : internalId // ignore: cast_nullable_to_non_nullable
                   as String,
         title: null == title
             ? _value.title
@@ -182,7 +197,8 @@ class __$$GameImplCopyWithImpl<$Res>
 
 class _$GameImpl implements _Game {
   const _$GameImpl({
-    required this.appName,
+    required this.id,
+    required this.internalId,
     required this.title,
     this.iconPath,
     required this.hasLsfgEnabled,
@@ -190,9 +206,13 @@ class _$GameImpl implements _Game {
     this.type = GameType.heroic,
   });
 
-  /// Unique game identifier (from app_name in JSON)
+  /// Unique game identifier (source:internalId)
   @override
-  final String appName;
+  final String id;
+
+  /// Original identifier from source (e.g. appName/slug/appID)
+  @override
+  final String internalId;
 
   /// Display title of the game
   @override
@@ -218,7 +238,7 @@ class _$GameImpl implements _Game {
 
   @override
   String toString() {
-    return 'Game(appName: $appName, title: $title, iconPath: $iconPath, hasLsfgEnabled: $hasLsfgEnabled, isSelected: $isSelected, type: $type)';
+    return 'Game(id: $id, internalId: $internalId, title: $title, iconPath: $iconPath, hasLsfgEnabled: $hasLsfgEnabled, isSelected: $isSelected, type: $type)';
   }
 
   @override
@@ -226,7 +246,9 @@ class _$GameImpl implements _Game {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$GameImpl &&
-            (identical(other.appName, appName) || other.appName == appName) &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.internalId, internalId) ||
+                other.internalId == internalId) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.iconPath, iconPath) ||
                 other.iconPath == iconPath) &&
@@ -240,7 +262,8 @@ class _$GameImpl implements _Game {
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    appName,
+    id,
+    internalId,
     title,
     iconPath,
     hasLsfgEnabled,
@@ -259,7 +282,8 @@ class _$GameImpl implements _Game {
 
 abstract class _Game implements Game {
   const factory _Game({
-    required final String appName,
+    required final String id,
+    required final String internalId,
     required final String title,
     final String? iconPath,
     required final bool hasLsfgEnabled,
@@ -267,9 +291,13 @@ abstract class _Game implements Game {
     final GameType type,
   }) = _$GameImpl;
 
-  /// Unique game identifier (from app_name in JSON)
+  /// Unique game identifier (source:internalId)
   @override
-  String get appName;
+  String get id;
+
+  /// Original identifier from source (e.g. appName/slug/appID)
+  @override
+  String get internalId;
 
   /// Display title of the game
   @override

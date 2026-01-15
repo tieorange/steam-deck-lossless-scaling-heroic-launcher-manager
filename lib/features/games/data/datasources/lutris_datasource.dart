@@ -47,7 +47,8 @@ class LutrisDatasource {
                }
                
                games.add(Game(
-                  appName: slug,
+                  id: 'lutris:$slug',
+                  internalId: slug,
                   title: name,
                   type: GameType.lutris,
                   hasLsfgEnabled: hasLsfg,

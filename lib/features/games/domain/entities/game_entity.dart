@@ -6,8 +6,11 @@ part 'game_entity.freezed.dart';
 @freezed
 class Game with _$Game {
   const factory Game({
-    /// Unique game identifier (from app_name in JSON)
-    required String appName,
+    /// Unique game identifier (source:internalId)
+    required String id,
+
+    /// Original identifier from source (e.g. appName/slug/appID)
+    required String internalId,
     
     /// Display title of the game
     required String title,

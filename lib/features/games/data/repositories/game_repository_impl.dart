@@ -118,7 +118,8 @@ class GameRepositoryImpl implements GameRepository {
       String? iconPath = _findIcon(appName);
       
       return Game(
-        appName: appName,
+        id: 'heroic:$appName',
+        internalId: appName,
         title: model.displayTitle,
         iconPath: iconPath,
         hasLsfgEnabled: model.hasLsfgEnabled,
@@ -185,23 +186,55 @@ class GameRepositoryImpl implements GameRepository {
     }
   }
   
-  Future<void> _modifyGameConfig(String appName, {required bool addLsfg}) async {
-    final heroicFilePath = '${_platformService.gameConfigPath}/$appName.json';
-    debugPrint('[GameRepository] _modifyGameConfig: $heroicFilePath (addLsfg: $addLsfg)');
+  Future<void> _modifyGameConfig(String id, {required bool addLsfg}) async {
+    final parts = id.split(':');
+    if (parts.length < 2) {
+       // Check if it's a legacy ID (probably Heroic if no prefix)
+       // Or throw. Assuming new format is enforced.
+       debugPrint('Invalid Game ID format: $id. Assuming legacy/Heroic.');
+       // If legacy, assume Heroic path
+       await _modifyHeroicConfig(id, addLsfg: addLsfg);
+       return;
+    }
     
-    final heroicFile = File(heroicFilePath);
-    
-    if (await heroicFile.exists()) {
-      // Handle Heroic Config
+    final source = parts[0];
+    final appName = parts.sublist(1).join(':'); // handle colons in name
+
+    debugPrint('[GameRepository] _modifyGameConfig: src=$source, app=$appName (addLsfg: $addLsfg)');
+
+    if (source == 'heroic') {
+       await _modifyHeroicConfig(appName, addLsfg: addLsfg);
+    } else if (source == 'ogi') {
+       debugPrint('[GameRepository] Found OGI game, but shortcuts editing not implemented');
+       throw Exception('LSFG Support for OpenGameInstaller games is not yet implemented (requires Steam Shortcuts editing).');
+    } else if (source == 'lutris') {
+       await _modifyLutrisConfig(appName, addLsfg: addLsfg);
+    } else {
+       throw Exception('Unknown game source: $source');
+    }
+  }
+
+  Future<void> _modifyHeroicConfig(String appName, {required bool addLsfg}) async {
+      final heroicFilePath = '${_platformService.gameConfigPath}/$appName.json';
+      final heroicFile = File(heroicFilePath);
+      
+      if (!await heroicFile.exists()) {
+        throw Exception('Heroic config not found: $heroicFilePath');
+      }
+
       final content = await heroicFile.readAsString();
       final json = jsonDecode(content) as Map<String, dynamic>;
       
-      // Handle the environment variable
-      // Heroic uses both 'environment' and 'enviromentOptions' (with typo)
-      // We'll use 'enviromentOptions' to match Heroic's format
-      Map<String, dynamic> envOptions = {};
+      String keyToUse = 'environmentOptions'; 
       if (json.containsKey('enviromentOptions')) {
-        envOptions = Map<String, dynamic>.from(json['enviromentOptions'] as Map);
+         keyToUse = 'enviromentOptions';
+      } else if (json.containsKey('environmentOptions')) {
+         keyToUse = 'environmentOptions';
+      }
+      
+      Map<String, dynamic> envOptions = {};
+      if (json.containsKey(keyToUse)) {
+        envOptions = Map<String, dynamic>.from(json[keyToUse] as Map);
       }
       
       if (addLsfg) {
@@ -210,61 +243,46 @@ class GameRepositoryImpl implements GameRepository {
         envOptions.remove(PlatformService.lsfgEnvKey);
       }
       
-      json['enviromentOptions'] = envOptions;
+      json[keyToUse] = envOptions;
       
-      // Write back with nice formatting
       final encoder = const JsonEncoder.withIndent('  ');
       await heroicFile.writeAsString(encoder.convert(json));
-      return;
-    }
-    
-    // Check OGI
-    final ogiFilePath = '${_platformService.ogiLibraryPath}/$appName.json';
-    final ogiFile = File(ogiFilePath);
-    
-    if (await ogiFile.exists()) {
-      debugPrint('[GameRepository] Found OGI game, but shortcuts editing not implemented');
-      throw Exception('LSFG Support for OpenGameInstaller games is not yet implemented (requires Steam Shortcuts editing).');
-    }
-    
-    // Check Lutris
-    final lutrisFilePath = '${_platformService.lutrisConfigPath}/$appName.yml';
-    final lutrisFile = File(lutrisFilePath);
-    
-    if (await lutrisFile.exists()) {
-       debugPrint('[GameRepository] Modifying Lutris config: $lutrisFilePath');
-       try {
-         final content = await lutrisFile.readAsString();
-         final doc = YamlEditor(content);
-         final yaml = loadYaml(content);
-         
-         // Ensure structure exists
-         if (yaml is Map) {
-           if (!yaml.containsKey('system') || yaml['system'] == null) {
-              doc.update(['system'], {'env': {}});
-           } else {
-             final system = yaml['system'];
-             if (system is Map && (!system.containsKey('env') || system['env'] == null)) {
-                doc.update(['system', 'env'], {});
+  }
+
+  Future<void> _modifyLutrisConfig(String appName, {required bool addLsfg}) async {
+      final lutrisFilePath = '${_platformService.lutrisConfigPath}/$appName.yml';
+      final lutrisFile = File(lutrisFilePath);
+      
+      if (await lutrisFile.exists()) {
+         debugPrint('[GameRepository] Modifying Lutris config: $lutrisFilePath');
+         try {
+           final content = await lutrisFile.readAsString();
+           final doc = YamlEditor(content);
+           final yaml = loadYaml(content);
+           
+           if (yaml is Map) {
+             if (!yaml.containsKey('system') || yaml['system'] == null) {
+                doc.update(['system'], {'env': {}});
+             } else {
+               final system = yaml['system'];
+               if (system is Map && (!system.containsKey('env') || system['env'] == null)) {
+                  doc.update(['system', 'env'], {});
+               }
              }
            }
-         }
 
-         if (addLsfg) {
-            doc.update(['system', 'env', PlatformService.lsfgEnvKey], PlatformService.lsfgEnvValue);
-         } else {
-            doc.remove(['system', 'env', PlatformService.lsfgEnvKey]);
+           if (addLsfg) {
+              doc.update(['system', 'env', PlatformService.lsfgEnvKey], PlatformService.lsfgEnvValue);
+           } else {
+              doc.remove(['system', 'env', PlatformService.lsfgEnvKey]);
+           }
+           
+           await lutrisFile.writeAsString(doc.toString());
+           return;
+         } catch (e) {
+           debugPrint('[GameRepository] Failed to update Lutris config: $e');
+           throw Exception('Failed to update Lutris config: $e');
          }
-         
-         await lutrisFile.writeAsString(doc.toString());
-         return;
-       } catch (e) {
-         debugPrint('[GameRepository] Failed to update Lutris config: $e');
-         throw Exception('Failed to update Lutris config: $e');
-       }
-    }
-    
-    debugPrint('[GameRepository] Game config file not found: $appName');
-    throw Exception('Game config file not found: $appName');
+      }
+      throw Exception('Lutris config file not found: $appName');
   }
-}
