@@ -33,31 +33,47 @@ class _GamesPageState extends State<GamesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Games'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: () => context.read<GamesCubit>().loadGames(),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Games'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Heroic Launcher'),
+              Tab(text: 'OpenGameInstaller'),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          GamesSearchBar(controller: _searchController),
-          Expanded(child: _buildGamesList()),
-          GamesActionBar(
-            onApply: () => _showApplyConfirmation(context),
-            onRemove: () => _showRemoveConfirmation(context),
-          ),
-        ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: () => context.read<GamesCubit>().loadGames(),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            GamesSearchBar(controller: _searchController),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildGameTypeTab(GameType.heroic),
+                  _buildGameTypeTab(GameType.ogi),
+                ],
+              ),
+            ),
+            GamesActionBar(
+              onApply: () => _showApplyConfirmation(context),
+              onRemove: () => _showRemoveConfirmation(context),
+            ),
+          ],
+        ),
       ),
     );
   }
   
-  Widget _buildGamesList() {
+  Widget _buildGameTypeTab(GameType type) {
     return BlocBuilder<GamesCubit, GamesState>(
       builder: (context, state) {
         return state.when(
@@ -67,10 +83,13 @@ class _GamesPageState extends State<GamesPage> {
             if (isApplying) {
               return const GamesLoadingState(message: 'Applying changes...');
             }
-            if (filteredGames.isEmpty) {
+            
+            final gamesForType = filteredGames.where((g) => g.type == type).toList();
+            
+            if (gamesForType.isEmpty) {
               return GamesEmptyState(hasSearchQuery: searchQuery.isNotEmpty);
             }
-            return _buildGamesListView(filteredGames);
+            return _buildGamesListView(gamesForType);
           },
         );
       },
