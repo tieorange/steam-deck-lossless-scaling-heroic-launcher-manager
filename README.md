@@ -1,106 +1,129 @@
-# Heroic LSFG Applier
+# 🎮 Heroic LSFG Applier
 
-A Flutter desktop application for Steam Deck that enables **Lossless Scaling frame generation (LSFG-VK)** for games installed via Heroic Games Launcher.
+A Flutter desktop application for **Steam Deck** that enables **Lossless Scaling Frame Generation (LSFG-VK)** for games installed via:
+- 🦸 Heroic Games Launcher
+- 🦎 Lutris  
+- 📦 OpenGameInstaller (OGI)
 
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Steam%20Deck-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## Features
+---
 
-- 📋 **Game List**: View all games installed via Heroic Games Launcher
-- ✅ **Apply LSFG**: Enable frame generation for selected games with one click
-- ❌ **Remove LSFG**: Disable frame generation when needed
-- 🔍 **Search**: Quickly find games in your library
-- 💾 **Backup**: Create timestamped backups before making changes
-- 🔄 **Restore**: Easily restore from any backup if needed
-- 🌙 **Dark/Light Theme**: Follows system preference
+## ✨ Features
 
-## Requirements
+| Feature | Description |
+|---------|-------------|
+| 📋 **Game List** | View all games from Heroic, Lutris, and OGI |
+| ✅ **Apply LSFG** | Enable frame generation with one click |
+| ❌ **Remove LSFG** | Disable frame generation when needed |
+| 🔍 **Search & Filter** | Find games quickly, filter by LSFG status |
+| 💾 **Backup & Restore** | Automatic backups before changes |
+| 🌙 **Dark/Light Theme** | Follows system preference |
+| 🔧 **Export Logs** | Debug issues easily |
 
-- Steam Deck (SteamOS) or any Linux system
-- [Heroic Games Launcher](https://heroicgameslauncher.com/) (Flatpak version recommended)
-- [LSFG-VK Decky Plugin](https://github.com/your-decky-plugin) installed
+---
 
-## Installation
+## 📦 Installation
 
-### Method 1: Download Release (Recommended)
+### Method 1: Download Release (Recommended) 
 
-1. **Download** the latest `heroic_lsfg_applier_linux_x64.zip` from the [Releases page](#).
-2. **Transfer** the zip file to your Steam Deck (Desktop Mode).
-3. **Right-click and Extract** the zip file.
-4. Open the extracted folder, right-click inside, and choosing "Open Terminal Here".
-5. Run the installer:
+1. **Download** the latest `heroic_lsfg_applier_linux_x64.zip` from Releases
+2. **Transfer** the zip to your Steam Deck (Desktop Mode)
+3. **Extract** the zip file
+4. **Run the installer**:
    ```bash
    ./install_local.sh
    ```
-   *This will add "Heroic LSFG Applier" to your application menu.*
+
+The app will appear in your application menu! 🎉
 
 ### Method 2: Build from Source
 
-If you prefer to build it yourself on the Deck:
-
 ```bash
-# 1. Clone the project
-git clone https://github.com/example/heroic-lsfg-applier.git
+# Clone the repo
+git clone https://github.com/yourusername/heroic-lsfg-applier.git
 cd heroic-lsfg-applier
 
-# 2. Run the build script (automates fetching Flutter & dependencies)
+# Build on Steam Deck
 ./scripts/build_on_deck.sh
 
-# 3. Install locally
+# Install
 ./scripts/install_local.sh
 ```
 
-## Usage
+---
 
-1. **Launch the app** from the application menu in Desktop Mode
-2. **Create a backup first** - Click the backup icon in the top right, then "Create Backup Now"
-3. **Select games** - Check the games you want to enable LSFG for
-4. **Apply LSFG** - Click "Apply LSFG" button at the bottom
-5. **Launch your games** - The LSFG-VK plugin will now work with these games
+## 🛠️ Makefile Commands
+
+We provide a `Makefile` for easy development:
+
+| Command | Description |
+|---------|-------------|
+| `make run` | Run the app on macOS |
+| `make analyze` | Run Flutter analyzer |
+| `make gen` | Generate freezed/json code |
+| `make setup-test` | Create test environment (macOS) |
+| `make verify-test` | Check if LSFG applied correctly |
+| `make build-linux` | Build Linux release via Docker |
+| `make install` | Install app locally |
+| `make clean` | Clean build artifacts |
+
+---
+
+## 🚀 Usage
+
+1. **Launch** the app from your application menu
+2. **Create a backup** first (backup icon in top bar)
+3. **Select games** you want to enable LSFG for
+4. **Click "Apply LSFG"** ✅
+5. **Launch your games** - Frame generation is now active!
 
 ### Removing LSFG
 
-1. Select the games you want to disable LSFG for
-2. Click "Remove LSFG" button
-3. The games will return to their original state
+1. Select games → Click **"Remove LSFG"** ❌
 
 ### Restoring from Backup
 
-If something goes wrong:
-1. Go to Backup & Restore (backup icon)
-2. Find the backup you want to restore
-3. Click the restore icon
-4. Confirm the restoration
+1. Go to Backup & Restore → Select backup → Restore 🔄
 
-## How It Works
+---
 
-The app modifies game configuration files located at:
-- **Flatpak Heroic**: `~/.var/app/com.heroicgameslauncher.hgl/config/heroic/GamesConfig/`
-- **Native Heroic**: `~/.config/heroic/GamesConfig/`
+## ⚙️ How It Works
 
-For each selected game, it adds the environment variable:
-```json
-{
-  "enviromentOptions": {
-    "LSFG_PROCESS": "decky-lsfg-vk"
-  }
-}
-```
+The app modifies game configuration files:
 
-This tells the LSFG-VK Vulkan layer to inject frame generation into the game.
+| Launcher | Config Location | Method |
+|----------|-----------------|--------|
+| **Heroic** | `~/.var/app/com.heroicgameslauncher.hgl/config/heroic/GamesConfig/*.json` | Adds `LSFG_PROCESS` to `environmentOptions` |
+| **Lutris** | `~/.config/lutris/games/*.yml` | Adds `LSFG_PROCESS` to `system.env` |
+| **OGI** | `~/.steam/steam/userdata/*/config/shortcuts.vdf` | Injects env var into `LaunchOptions` |
 
-## Development
+---
 
-### macOS Testing
+## 💻 Development
 
-The app includes mock paths for macOS development. Create test files at:
+### Building for Linux from Mac (Apple Silicon)
+
+1. **Install Docker Desktop** (enable Rosetta for x86/amd64)
+2. Run:
+   ```bash
+   make build-linux
+   ```
+3. Output: `releases/heroic_lsfg_applier_linux_x64.zip`
+
+### Testing OGI Support (macOS)
+
 ```bash
-mkdir -p ~/HeroicTest/config/heroic/GamesConfig
+# 1. Setup test environment
+make setup-test
 
-# Create sample game configs
-echo '{"app_name":"test_game","title":"Test Game"}' > ~/HeroicTest/config/heroic/GamesConfig/test_game.json
+# 2. Run the app and apply LSFG to "Test OGI Game"
+make run
+
+# 3. Verify the change
+make verify-test
 ```
 
 ### Project Structure
@@ -108,59 +131,44 @@ echo '{"app_name":"test_game","title":"Test Game"}' > ~/HeroicTest/config/heroic
 ```
 lib/
 ├── core/
-│   ├── error/          # Failure classes
-│   ├── platform/       # Platform-specific paths
-│   ├── router/         # go_router setup
+│   ├── logging/        # LoggerService
+│   ├── platform/       # Platform paths
+│   ├── services/       # VdfBinaryService
 │   └── theme/          # Material 3 themes
 ├── features/
-│   ├── games/          # Game list feature
-│   │   ├── data/
-│   │   ├── domain/
-│   │   └── presentation/
-│   └── backup/         # Backup feature
-│       ├── data/
-│       ├── domain/
-│       └── presentation/
+│   ├── games/          # Main game list feature
+│   ├── backup/         # Backup & restore
+│   └── settings/       # App settings
 └── main.dart
 ```
 
-### Building Linux App from Mac (M-chip)
+---
 
-To build the Linux version on a MacBook with Apple Silicon (M1/M2/M3):
+## 📋 Requirements
 
-1. **Install Docker Desktop**: Ensure Docker Desktop for Mac is installed and running.
-   - Go to Settings -> General -> Ensure "Use Rosetta for x86/amd64 emulation on Apple Silicon" is ENABLED.
+- 🎮 Steam Deck (SteamOS) or Linux
+- 🦸 [Heroic Games Launcher](https://heroicgameslauncher.com/) (optional)
+- 🦎 [Lutris](https://lutris.net/) (optional)
+- 📦 [OpenGameInstaller](https://github.com/Nat3z/OpenGameInstaller) (optional)
+- 🔌 [LSFG-VK Decky Plugin](https://github.com/xMasterZx/decky-lsfg-vk) installed
 
-2. **Run the Build Script**:
-   ```bash
-   ./build_linux_on_mac.sh
-   ```
-   *Note: This script uses a Docker container to cross-compile the Linux binary (x64) and packages it as a ZIP file. The first run may take several minutes to download dependencies.*
+---
 
-   **Output**:
-   - The script produces `releases/heroic_lsfg_applier_linux_x64.zip`.
-   - Tranfser this file to your Steam Deck, unzip, and run the binary.
+## 📄 License
 
-### Building Flatpak
+MIT License - see [LICENSE](LICENSE) for details.
 
-```bash
-# Install flatpak-builder if not already installed
-sudo apt install flatpak-builder
+---
 
-# Build and install locally
-flatpak-builder --user --install --force-clean build flatpak/org.example.heroic_lsfg_applier.yaml
-```
+## 🤝 Contributing
 
-## License
+Contributions are welcome! Feel free to open issues and pull requests.
 
-MIT License - see [LICENSE](LICENSE) file for details.
+---
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - [Heroic Games Launcher](https://heroicgameslauncher.com/) team
-- [LSFG-VK](https://github.com/lsfg-vk) developers
+- [LSFG-VK](https://github.com/xMasterZx/decky-lsfg-vk) developers
+- [OpenGameInstaller](https://github.com/Nat3z/OpenGameInstaller) by Nat3z
 - Flutter team for excellent Linux desktop support
