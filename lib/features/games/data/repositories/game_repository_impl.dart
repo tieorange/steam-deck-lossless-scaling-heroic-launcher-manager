@@ -8,6 +8,7 @@ import 'package:heroic_lsfg_applier/core/platform/platform_service.dart';
 import 'package:heroic_lsfg_applier/features/games/data/models/game_config_model.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/entities/game_entity.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
+import 'package:heroic_lsfg_applier/features/games/data/datasources/ogi_datasource.dart';
 import 'package:path/path.dart' as p;
 
 /// Implementation of GameRepository using local file system
@@ -20,32 +21,53 @@ class GameRepositoryImpl implements GameRepository {
   Future<Result<List<Game>>> getGames() async {
     try {
       debugPrint('[GameRepository] getGames called');
-      debugPrint('[GameRepository] gameConfigPath: ${_platformService.gameConfigPath}');
-      
-      final gameConfigDir = Directory(_platformService.gameConfigPath);
-      
-      if (!await gameConfigDir.exists()) {
-        debugPrint('[GameRepository] Game config directory does not exist!');
-        return const Left(HeroicNotFoundFailure());
-      }
-      
-      debugPrint('[GameRepository] Directory exists, listing files...');
       final games = <Game>[];
-      
-      await for (final entity in gameConfigDir.list()) {
-        debugPrint('[GameRepository] Found entity: ${entity.path}');
-        if (entity is File && entity.path.endsWith('.json')) {
-          final game = await _parseGameFile(entity);
-          if (game != null) {
-            games.add(game);
+      bool anySourceFound = false;
+
+      // 1. Fetch Heroic Games
+      try {
+        debugPrint('[GameRepository] Checking Heroic config: ${_platformService.gameConfigPath}');
+        final gameConfigDir = Directory(_platformService.gameConfigPath);
+        
+        if (await gameConfigDir.exists()) {
+          anySourceFound = true;
+          debugPrint('[GameRepository] Heroic directory exists, listing files...');
+          
+          await for (final entity in gameConfigDir.list()) {
+            if (entity is File && entity.path.endsWith('.json')) {
+              final game = await _parseGameFile(entity);
+              if (game != null) {
+                games.add(game);
+              }
+            }
           }
+        } else {
+          debugPrint('[GameRepository] Heroic config directory does not exist');
         }
+      } catch (e) {
+        debugPrint('[GameRepository] Error loading Heroic games: $e');
+      }
+
+      // 2. Fetch OGI Games
+      try {
+        debugPrint('[GameRepository] Checking OGI library: ${_platformService.ogiLibraryPath}');
+        final ogiDatasource = OgiDatasource(_platformService);
+        final ogiGames = await ogiDatasource.getOgiGames();
+        if (ogiGames.isNotEmpty) {
+          anySourceFound = true;
+          games.addAll(ogiGames);
+          debugPrint('[GameRepository] Added ${ogiGames.length} OGI games');
+        } else {
+           debugPrint('[GameRepository] No OGI games found');
+        }
+      } catch (e) {
+        debugPrint('[GameRepository] Error loading OGI games: $e');
       }
       
-      debugPrint('[GameRepository] Parsed ${games.length} games');
+      debugPrint('[GameRepository] Total games parsed: ${games.length}');
       
-      if (games.isEmpty) {
-        debugPrint('[GameRepository] No games found');
+      if (!anySourceFound && games.isEmpty) {
+        debugPrint('[GameRepository] No game sources found');
         return const Left(NoGamesFoundFailure());
       }
       
@@ -145,36 +167,48 @@ class GameRepositoryImpl implements GameRepository {
   }
   
   Future<void> _modifyGameConfig(String appName, {required bool addLsfg}) async {
-    final filePath = '${_platformService.gameConfigPath}/$appName.json';
-    debugPrint('[GameRepository] _modifyGameConfig: $filePath (addLsfg: $addLsfg)');
-    final file = File(filePath);
+    final heroicFilePath = '${_platformService.gameConfigPath}/$appName.json';
+    debugPrint('[GameRepository] _modifyGameConfig: $heroicFilePath (addLsfg: $addLsfg)');
     
-    if (!await file.exists()) {
-      debugPrint('[GameRepository] Game config file not found: $filePath');
-      throw Exception('Game config file not found: $filePath');
+    final heroicFile = File(heroicFilePath);
+    
+    if (await heroicFile.exists()) {
+      // Handle Heroic Config
+      final content = await heroicFile.readAsString();
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      
+      // Handle the environment variable
+      // Heroic uses both 'environment' and 'enviromentOptions' (with typo)
+      // We'll use 'enviromentOptions' to match Heroic's format
+      Map<String, dynamic> envOptions = {};
+      if (json.containsKey('enviromentOptions')) {
+        envOptions = Map<String, dynamic>.from(json['enviromentOptions'] as Map);
+      }
+      
+      if (addLsfg) {
+        envOptions[PlatformService.lsfgEnvKey] = PlatformService.lsfgEnvValue;
+      } else {
+        envOptions.remove(PlatformService.lsfgEnvKey);
+      }
+      
+      json['enviromentOptions'] = envOptions;
+      
+      // Write back with nice formatting
+      final encoder = const JsonEncoder.withIndent('  ');
+      await heroicFile.writeAsString(encoder.convert(json));
+      return;
     }
     
-    final content = await file.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
+    // Check OGI
+    final ogiFilePath = '${_platformService.ogiLibraryPath}/$appName.json';
+    final ogiFile = File(ogiFilePath);
     
-    // Handle the environment variable
-    // Heroic uses both 'environment' and 'enviromentOptions' (with typo)
-    // We'll use 'enviromentOptions' to match Heroic's format
-    Map<String, dynamic> envOptions = {};
-    if (json.containsKey('enviromentOptions')) {
-      envOptions = Map<String, dynamic>.from(json['enviromentOptions'] as Map);
+    if (await ogiFile.exists()) {
+      debugPrint('[GameRepository] Found OGI game, but shortcuts editing not implemented');
+      throw Exception('LSFG Support for OpenGameInstaller games is not yet implemented (requires Steam Shortcuts editing).');
     }
     
-    if (addLsfg) {
-      envOptions[PlatformService.lsfgEnvKey] = PlatformService.lsfgEnvValue;
-    } else {
-      envOptions.remove(PlatformService.lsfgEnvKey);
-    }
-    
-    json['enviromentOptions'] = envOptions;
-    
-    // Write back with nice formatting
-    final encoder = const JsonEncoder.withIndent('  ');
-    await file.writeAsString(encoder.convert(json));
+    debugPrint('[GameRepository] Game config file not found: $appName');
+    throw Exception('Game config file not found: $appName');
   }
 }

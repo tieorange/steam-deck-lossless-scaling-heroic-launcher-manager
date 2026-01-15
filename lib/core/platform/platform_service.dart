@@ -23,6 +23,12 @@ abstract class PlatformService {
   
   /// Environment variable value we're setting
   static const String lsfgEnvValue = 'decky-lsfg-vk';
+
+  /// Path to OpenGameInstaller library
+  String get ogiLibraryPath;
+
+  /// Path to Steam user data (containing shortcuts.vdf)
+  String get steamUserDataPath;
 }
 
 /// Linux implementation for real Steam Deck/Linux usage
@@ -52,6 +58,12 @@ class LinuxPlatformService extends PlatformService {
   
   @override
   String get backupBasePath => '$_homeDir/.config/heroic_lsfg_applier/backups';
+
+  @override
+  String get ogiLibraryPath => '$_homeDir/.local/share/OpenGameInstaller/library';
+
+  @override
+  String get steamUserDataPath => '$_homeDir/.steam/steam/userdata';
 }
 
 /// macOS implementation for development/testing
@@ -73,6 +85,12 @@ class MacOSPlatformService extends PlatformService {
   
   @override
   String get backupBasePath => '$_homeDir/HeroicTest/heroic_lsfg_applier/backups';
+
+  @override
+  String get ogiLibraryPath => '$_homeDir/HeroicTest/OpenGameInstaller/library';
+
+  @override
+  String get steamUserDataPath => '$_homeDir/HeroicTest/Steam/userdata';
 }
 
 /// Factory to create the appropriate platform service

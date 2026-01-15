@@ -20,5 +20,13 @@ class Game with _$Game {
     
     /// Whether this game is selected in the UI
     @Default(false) bool isSelected,
+
+    /// Source of the game (Heroic, OpenGameInstaller, etc.)
+    @Default(GameType.heroic) GameType type,
   }) = _Game;
+}
+
+enum GameType {
+  heroic,
+  ogi,
 }

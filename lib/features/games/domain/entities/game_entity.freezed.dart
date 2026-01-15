@@ -32,6 +32,9 @@ mixin _$Game {
   /// Whether this game is selected in the UI
   bool get isSelected => throw _privateConstructorUsedError;
 
+  /// Source of the game (Heroic, OpenGameInstaller, etc.)
+  GameType get type => throw _privateConstructorUsedError;
+
   /// Create a copy of Game
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -49,6 +52,7 @@ abstract class $GameCopyWith<$Res> {
     String? iconPath,
     bool hasLsfgEnabled,
     bool isSelected,
+    GameType type,
   });
 }
 
@@ -72,6 +76,7 @@ class _$GameCopyWithImpl<$Res, $Val extends Game>
     Object? iconPath = freezed,
     Object? hasLsfgEnabled = null,
     Object? isSelected = null,
+    Object? type = null,
   }) {
     return _then(
       _value.copyWith(
@@ -95,6 +100,10 @@ class _$GameCopyWithImpl<$Res, $Val extends Game>
                 ? _value.isSelected
                 : isSelected // ignore: cast_nullable_to_non_nullable
                       as bool,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as GameType,
           )
           as $Val,
     );
@@ -115,6 +124,7 @@ abstract class _$$GameImplCopyWith<$Res> implements $GameCopyWith<$Res> {
     String? iconPath,
     bool hasLsfgEnabled,
     bool isSelected,
+    GameType type,
   });
 }
 
@@ -135,6 +145,7 @@ class __$$GameImplCopyWithImpl<$Res>
     Object? iconPath = freezed,
     Object? hasLsfgEnabled = null,
     Object? isSelected = null,
+    Object? type = null,
   }) {
     return _then(
       _$GameImpl(
@@ -158,6 +169,10 @@ class __$$GameImplCopyWithImpl<$Res>
             ? _value.isSelected
             : isSelected // ignore: cast_nullable_to_non_nullable
                   as bool,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as GameType,
       ),
     );
   }
@@ -172,6 +187,7 @@ class _$GameImpl implements _Game {
     this.iconPath,
     required this.hasLsfgEnabled,
     this.isSelected = false,
+    this.type = GameType.heroic,
   });
 
   /// Unique game identifier (from app_name in JSON)
@@ -195,9 +211,14 @@ class _$GameImpl implements _Game {
   @JsonKey()
   final bool isSelected;
 
+  /// Source of the game (Heroic, OpenGameInstaller, etc.)
+  @override
+  @JsonKey()
+  final GameType type;
+
   @override
   String toString() {
-    return 'Game(appName: $appName, title: $title, iconPath: $iconPath, hasLsfgEnabled: $hasLsfgEnabled, isSelected: $isSelected)';
+    return 'Game(appName: $appName, title: $title, iconPath: $iconPath, hasLsfgEnabled: $hasLsfgEnabled, isSelected: $isSelected, type: $type)';
   }
 
   @override
@@ -212,7 +233,8 @@ class _$GameImpl implements _Game {
             (identical(other.hasLsfgEnabled, hasLsfgEnabled) ||
                 other.hasLsfgEnabled == hasLsfgEnabled) &&
             (identical(other.isSelected, isSelected) ||
-                other.isSelected == isSelected));
+                other.isSelected == isSelected) &&
+            (identical(other.type, type) || other.type == type));
   }
 
   @override
@@ -223,6 +245,7 @@ class _$GameImpl implements _Game {
     iconPath,
     hasLsfgEnabled,
     isSelected,
+    type,
   );
 
   /// Create a copy of Game
@@ -241,6 +264,7 @@ abstract class _Game implements Game {
     final String? iconPath,
     required final bool hasLsfgEnabled,
     final bool isSelected,
+    final GameType type,
   }) = _$GameImpl;
 
   /// Unique game identifier (from app_name in JSON)
@@ -262,6 +286,10 @@ abstract class _Game implements Game {
   /// Whether this game is selected in the UI
   @override
   bool get isSelected;
+
+  /// Source of the game (Heroic, OpenGameInstaller, etc.)
+  @override
+  GameType get type;
 
   /// Create a copy of Game
   /// with the given fields replaced by the non-null parameter values.
