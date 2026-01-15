@@ -34,7 +34,7 @@ class _GamesPageState extends State<GamesPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Games'),
@@ -42,6 +42,7 @@ class _GamesPageState extends State<GamesPage> {
             tabs: [
               Tab(text: 'Heroic Launcher'),
               Tab(text: 'OpenGameInstaller'),
+              Tab(text: 'Lutris'),
             ],
           ),
           actions: [
@@ -60,6 +61,7 @@ class _GamesPageState extends State<GamesPage> {
                 children: [
                   _buildGameTypeTab(GameType.heroic),
                   _buildGameTypeTab(GameType.ogi),
+                  _buildGameTypeTab(GameType.lutris),
                 ],
               ),
             ),

@@ -29,6 +29,9 @@ abstract class PlatformService {
 
   /// Path to Steam user data (containing shortcuts.vdf)
   String get steamUserDataPath;
+
+  /// Path to Lutris games config directory
+  String get lutrisConfigPath;
 }
 
 /// Linux implementation for real Steam Deck/Linux usage
@@ -64,6 +67,15 @@ class LinuxPlatformService extends PlatformService {
 
   @override
   String get steamUserDataPath => '$_homeDir/.steam/steam/userdata';
+
+  @override
+  String get lutrisConfigPath {
+    final configGames = '$_homeDir/.config/lutris/games';
+    if (Directory(configGames).existsSync()) {
+      return configGames;
+    }
+    return '$_homeDir/.local/share/lutris/games';
+  }
 }
 
 /// macOS implementation for development/testing
@@ -91,6 +103,9 @@ class MacOSPlatformService extends PlatformService {
 
   @override
   String get steamUserDataPath => '$_homeDir/HeroicTest/Steam/userdata';
+
+  @override
+  String get lutrisConfigPath => '$_homeDir/HeroicTest/lutris/games';
 }
 
 /// Factory to create the appropriate platform service

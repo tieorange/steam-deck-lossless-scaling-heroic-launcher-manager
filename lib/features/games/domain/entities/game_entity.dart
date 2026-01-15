@@ -29,4 +29,5 @@ class Game with _$Game {
 enum GameType {
   heroic,
   ogi,
+  lutris,
 }

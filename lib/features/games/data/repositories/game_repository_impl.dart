@@ -9,7 +9,10 @@ import 'package:heroic_lsfg_applier/features/games/data/models/game_config_model
 import 'package:heroic_lsfg_applier/features/games/domain/entities/game_entity.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
 import 'package:heroic_lsfg_applier/features/games/data/datasources/ogi_datasource.dart';
+import 'package:heroic_lsfg_applier/features/games/data/datasources/lutris_datasource.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 /// Implementation of GameRepository using local file system
 class GameRepositoryImpl implements GameRepository {
@@ -62,6 +65,22 @@ class GameRepositoryImpl implements GameRepository {
         }
       } catch (e) {
         debugPrint('[GameRepository] Error loading OGI games: $e');
+      }
+
+      // 3. Fetch Lutris Games
+      try {
+        debugPrint('[GameRepository] Checking Lutris config: ${_platformService.lutrisConfigPath}');
+        final lutrisDatasource = LutrisDatasource(_platformService);
+        final lutrisGames = await lutrisDatasource.getLutrisGames();
+        if (lutrisGames.isNotEmpty) {
+          anySourceFound = true;
+          games.addAll(lutrisGames);
+          debugPrint('[GameRepository] Added ${lutrisGames.length} Lutris games');
+        } else {
+           debugPrint('[GameRepository] No Lutris games found');
+        }
+      } catch (e) {
+        debugPrint('[GameRepository] Error loading Lutris games: $e');
       }
       
       debugPrint('[GameRepository] Total games parsed: ${games.length}');
@@ -206,6 +225,43 @@ class GameRepositoryImpl implements GameRepository {
     if (await ogiFile.exists()) {
       debugPrint('[GameRepository] Found OGI game, but shortcuts editing not implemented');
       throw Exception('LSFG Support for OpenGameInstaller games is not yet implemented (requires Steam Shortcuts editing).');
+    }
+    
+    // Check Lutris
+    final lutrisFilePath = '${_platformService.lutrisConfigPath}/$appName.yml';
+    final lutrisFile = File(lutrisFilePath);
+    
+    if (await lutrisFile.exists()) {
+       debugPrint('[GameRepository] Modifying Lutris config: $lutrisFilePath');
+       try {
+         final content = await lutrisFile.readAsString();
+         final doc = YamlEditor(content);
+         final yaml = loadYaml(content);
+         
+         // Ensure structure exists
+         if (yaml is Map) {
+           if (!yaml.containsKey('system') || yaml['system'] == null) {
+              doc.update(['system'], {'env': {}});
+           } else {
+             final system = yaml['system'];
+             if (system is Map && (!system.containsKey('env') || system['env'] == null)) {
+                doc.update(['system', 'env'], {});
+             }
+           }
+         }
+
+         if (addLsfg) {
+            doc.update(['system', 'env', PlatformService.lsfgEnvKey], PlatformService.lsfgEnvValue);
+         } else {
+            doc.remove(['system', 'env', PlatformService.lsfgEnvKey]);
+         }
+         
+         await lutrisFile.writeAsString(doc.toString());
+         return;
+       } catch (e) {
+         debugPrint('[GameRepository] Failed to update Lutris config: $e');
+         throw Exception('Failed to update Lutris config: $e');
+       }
     }
     
     debugPrint('[GameRepository] Game config file not found: $appName');
