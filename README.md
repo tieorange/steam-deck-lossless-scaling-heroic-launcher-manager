@@ -24,49 +24,32 @@ A Flutter desktop application for Steam Deck that enables **Lossless Scaling fra
 
 ## Installation
 
-### On Steam Deck (Recommended)
+### Method 1: Download Release (Recommended)
 
-The easiest way to install is directly on your Steam Deck in Desktop Mode:
+1. **Download** the latest `heroic_lsfg_applier_linux_x64.zip` from the [Releases page](#).
+2. **Transfer** the zip file to your Steam Deck (Desktop Mode).
+3. **Right-click and Extract** the zip file.
+4. Open the extracted folder, right-click inside, and choosing "Open Terminal Here".
+5. Run the installer:
+   ```bash
+   ./install_local.sh
+   ```
+   *This will add "Heroic LSFG Applier" to your application menu.*
+
+### Method 2: Build from Source
+
+If you prefer to build it yourself on the Deck:
 
 ```bash
-# 1. Clone or copy the project to your Steam Deck
+# 1. Clone the project
 git clone https://github.com/example/heroic-lsfg-applier.git
 cd heroic-lsfg-applier
 
-# 2. Run the build script
+# 2. Run the build script (automates fetching Flutter & dependencies)
 ./scripts/build_on_deck.sh
 
-# 3. Install locally (adds to app menu)
+# 3. Install locally
 ./scripts/install_local.sh
-```
-
-The app will appear in your application menu as "Heroic LSFG Applier".
-
-### From Flatpak (Advanced)
-
-```bash
-# Install from local build (requires flatpak-builder)
-flatpak-builder --user --install --force-clean build flatpak/org.example.heroic_lsfg_applier.yaml
-
-# Or install from Flathub (when available)
-flatpak install flathub org.example.heroic_lsfg_applier
-```
-
-### From Source
-
-```bash
-# Clone the repository
-git clone https://github.com/example/heroic-lsfg-applier.git
-cd heroic-lsfg-applier
-
-# Install dependencies
-flutter pub get
-
-# Generate code
-dart run build_runner build
-
-# Run on Linux
-flutter run -d linux
 ```
 
 ## Usage
