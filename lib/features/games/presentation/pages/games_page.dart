@@ -7,6 +7,7 @@ import 'package:heroic_lsfg_applier/features/games/presentation/widgets/game_car
 import 'package:heroic_lsfg_applier/features/games/presentation/widgets/games_action_bar.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/widgets/games_search_bar.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/widgets/games_states.dart';
+import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
 
 /// Main page showing list of Heroic games
 class GamesPage extends StatefulWidget {
@@ -33,31 +34,58 @@ class _GamesPageState extends State<GamesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Games'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: () => context.read<GamesCubit>().loadGames(),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Games'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Heroic Launcher'),
+              Tab(text: 'OpenGameInstaller'),
+              Tab(text: 'Lutris'),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          GamesSearchBar(controller: _searchController),
-          Expanded(child: _buildGamesList()),
-          GamesActionBar(
-            onApply: () => _showApplyConfirmation(context),
-            onRemove: () => _showRemoveConfirmation(context),
-          ),
-        ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.bug_report),
+              tooltip: 'Export Logs',
+              onPressed: () async {
+                 final messenger = ScaffoldMessenger.of(context);
+                 final result = await LoggerService.instance.exportLogs();
+                 messenger.showSnackBar(SnackBar(content: Text(result)));
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: () => context.read<GamesCubit>().loadGames(),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            GamesSearchBar(controller: _searchController),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildGameTypeTab(GameType.heroic),
+                  _buildGameTypeTab(GameType.ogi),
+                  _buildGameTypeTab(GameType.lutris),
+                ],
+              ),
+            ),
+            GamesActionBar(
+              onApply: () => _showApplyConfirmation(context),
+              onRemove: () => _showRemoveConfirmation(context),
+            ),
+          ],
+        ),
       ),
     );
   }
   
-  Widget _buildGamesList() {
+  Widget _buildGameTypeTab(GameType type) {
     return BlocBuilder<GamesCubit, GamesState>(
       builder: (context, state) {
         return state.when(
@@ -67,10 +95,13 @@ class _GamesPageState extends State<GamesPage> {
             if (isApplying) {
               return const GamesLoadingState(message: 'Applying changes...');
             }
-            if (filteredGames.isEmpty) {
+            
+            final gamesForType = filteredGames.where((g) => g.type == type).toList();
+            
+            if (gamesForType.isEmpty) {
               return GamesEmptyState(hasSearchQuery: searchQuery.isNotEmpty);
             }
-            return _buildGamesListView(filteredGames);
+            return _buildGamesListView(gamesForType);
           },
         );
       },

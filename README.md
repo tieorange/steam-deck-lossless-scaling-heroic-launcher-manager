@@ -141,6 +141,23 @@ lib/
 └── main.dart
 ```
 
+### Building Linux App from Mac (M-chip)
+
+To build the Linux version on a MacBook with Apple Silicon (M1/M2/M3):
+
+1. **Install Docker Desktop**: Ensure Docker Desktop for Mac is installed and running.
+   - Go to Settings -> General -> Ensure "Use Rosetta for x86/amd64 emulation on Apple Silicon" is ENABLED.
+
+2. **Run the Build Script**:
+   ```bash
+   ./build_linux_on_mac.sh
+   ```
+   *Note: This script uses a Docker container to cross-compile the Linux binary (x64) and packages it as a ZIP file. The first run may take several minutes to download dependencies.*
+
+   **Output**:
+   - The script produces `releases/heroic_lsfg_applier_linux_x64.zip`.
+   - Tranfser this file to your Steam Deck, unzip, and run the binary.
+
 ### Building Flatpak
 
 ```bash

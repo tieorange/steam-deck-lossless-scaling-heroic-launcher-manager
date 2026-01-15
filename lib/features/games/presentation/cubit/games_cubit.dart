@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_state.dart';
+import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
 
 /// Cubit for managing games list state
 class GamesCubit extends Cubit<GamesState> {
@@ -30,7 +30,7 @@ class GamesCubit extends Cubit<GamesState> {
     if (currentState is GamesLoaded) {
       final filtered = currentState.games.where((game) {
         return game.title.toLowerCase().contains(query.toLowerCase()) ||
-               game.appName.toLowerCase().contains(query.toLowerCase());
+               game.internalId.toLowerCase().contains(query.toLowerCase());
       }).toList();
       
       emit(currentState.copyWith(
@@ -41,18 +41,18 @@ class GamesCubit extends Cubit<GamesState> {
   }
   
   /// Toggle selection of a single game
-  void toggleGameSelection(String appName) {
+  void toggleGameSelection(String id) {
     final currentState = state;
     if (currentState is GamesLoaded) {
       final updatedGames = currentState.games.map((game) {
-        if (game.appName == appName) {
+        if (game.id == id) {
           return game.copyWith(isSelected: !game.isSelected);
         }
         return game;
       }).toList();
       
       final updatedFiltered = currentState.filteredGames.map((game) {
-        if (game.appName == appName) {
+        if (game.id == id) {
           return game.copyWith(isSelected: !game.isSelected);
         }
         return game;
@@ -69,10 +69,10 @@ class GamesCubit extends Cubit<GamesState> {
   void selectAll() {
     final currentState = state;
     if (currentState is GamesLoaded) {
-      final visibleAppNames = currentState.filteredGames.map((g) => g.appName).toSet();
+      final visibleIds = currentState.filteredGames.map((g) => g.id).toSet();
       
       final updatedGames = currentState.games.map((game) {
-        if (visibleAppNames.contains(game.appName)) {
+        if (visibleIds.contains(game.id)) {
           return game.copyWith(isSelected: true);
         }
         return game;
@@ -113,39 +113,39 @@ class GamesCubit extends Cubit<GamesState> {
   Future<bool> applyLsfgToSelected() async {
     final currentState = state;
     if (currentState is GamesLoaded) {
-      final selectedAppNames = currentState.games
+      final selectedIds = currentState.games
           .where((g) => g.isSelected)
-          .map((g) => g.appName)
+          .map((g) => g.id)
           .toList();
       
-      debugPrint('[GamesCubit] applyLsfgToSelected called');
-      debugPrint('[GamesCubit] Selected games: $selectedAppNames');
+      LoggerService.instance.log('[GamesCubit] applyLsfgToSelected called');
+      LoggerService.instance.log('[GamesCubit] Selected games: $selectedIds');
       
-      if (selectedAppNames.isEmpty) {
-        debugPrint('[GamesCubit] No games selected, returning false');
+      if (selectedIds.isEmpty) {
+        LoggerService.instance.log('[GamesCubit] No games selected, returning false');
         return false;
       }
       
       emit(currentState.copyWith(isApplying: true));
       
-      debugPrint('[GamesCubit] Calling repository.applyLsfgToGames...');
-      final result = await _gameRepository.applyLsfgToGames(selectedAppNames);
+      LoggerService.instance.log('[GamesCubit] Calling repository.applyLsfgToGames...');
+      final result = await _gameRepository.applyLsfgToGames(selectedIds);
       
       bool success = false;
       result.fold(
         (failure) {
-          debugPrint('[GamesCubit] Apply failed: ${failure.message}');
+          LoggerService.instance.log('[GamesCubit] Apply failed: ${failure.message}');
           emit(GamesState.error(message: failure.message));
         },
         (_) {
-          debugPrint('[GamesCubit] Apply succeeded, reloading games...');
+          LoggerService.instance.log('[GamesCubit] Apply succeeded, reloading games...');
           success = true;
           loadGames(); // Reload to reflect changes
         },
       );
       return success;
     }
-    debugPrint('[GamesCubit] State is not GamesLoaded, returning false');
+    LoggerService.instance.log('[GamesCubit] State is not GamesLoaded, returning false');
     return false;
   }
   
@@ -154,39 +154,39 @@ class GamesCubit extends Cubit<GamesState> {
   Future<bool> removeLsfgFromSelected() async {
     final currentState = state;
     if (currentState is GamesLoaded) {
-      final selectedAppNames = currentState.games
+      final selectedIds = currentState.games
           .where((g) => g.isSelected)
-          .map((g) => g.appName)
+          .map((g) => g.id)
           .toList();
       
-      debugPrint('[GamesCubit] removeLsfgFromSelected called');
-      debugPrint('[GamesCubit] Selected games: $selectedAppNames');
+      LoggerService.instance.log('[GamesCubit] removeLsfgFromSelected called');
+      LoggerService.instance.log('[GamesCubit] Selected games: $selectedIds');
       
-      if (selectedAppNames.isEmpty) {
-        debugPrint('[GamesCubit] No games selected, returning false');
+      if (selectedIds.isEmpty) {
+        LoggerService.instance.log('[GamesCubit] No games selected, returning false');
         return false;
       }
       
       emit(currentState.copyWith(isApplying: true));
       
-      debugPrint('[GamesCubit] Calling repository.removeLsfgFromGames...');
-      final result = await _gameRepository.removeLsfgFromGames(selectedAppNames);
+      LoggerService.instance.log('[GamesCubit] Calling repository.removeLsfgFromGames...');
+      final result = await _gameRepository.removeLsfgFromGames(selectedIds);
       
       bool success = false;
       result.fold(
         (failure) {
-          debugPrint('[GamesCubit] Remove failed: ${failure.message}');
+          LoggerService.instance.log('[GamesCubit] Remove failed: ${failure.message}');
           emit(GamesState.error(message: failure.message));
         },
         (_) {
-          debugPrint('[GamesCubit] Remove succeeded, reloading games...');
+          LoggerService.instance.log('[GamesCubit] Remove succeeded, reloading games...');
           success = true;
           loadGames(); // Reload to reflect changes
         },
       );
       return success;
     }
-    debugPrint('[GamesCubit] State is not GamesLoaded, returning false');
+    LoggerService.instance.log('[GamesCubit] State is not GamesLoaded, returning false');
     return false;
   }
   

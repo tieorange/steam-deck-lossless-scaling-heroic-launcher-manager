@@ -12,6 +12,11 @@ finish-args:
   - --filesystem=~/.var/app/com.heroicgameslauncher.hgl/config/heroic:rw
   - --filesystem=~/.config/heroic:rw
   - --filesystem=~/.config/heroic_lsfg_applier:create
+  - --filesystem=xdg-config/lutris:rw
+  - --filesystem=~/.local/share/lutris:rw
+  - --filesystem=~/.local/share/OpenGameInstaller:rw
+  - --filesystem=~/.steam:rw
+  - --filesystem=~/.local/share/Steam:rw
 
 modules:
   - name: heroic_lsfg_applier

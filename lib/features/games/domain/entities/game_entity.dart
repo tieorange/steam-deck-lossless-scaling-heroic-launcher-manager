@@ -6,8 +6,11 @@ part 'game_entity.freezed.dart';
 @freezed
 class Game with _$Game {
   const factory Game({
-    /// Unique game identifier (from app_name in JSON)
-    required String appName,
+    /// Unique game identifier (source:internalId)
+    required String id,
+
+    /// Original identifier from source (e.g. appName/slug/appID)
+    required String internalId,
     
     /// Display title of the game
     required String title,
@@ -20,5 +23,14 @@ class Game with _$Game {
     
     /// Whether this game is selected in the UI
     @Default(false) bool isSelected,
+
+    /// Source of the game (Heroic, OpenGameInstaller, etc.)
+    @Default(GameType.heroic) GameType type,
   }) = _Game;
+}
+
+enum GameType {
+  heroic,
+  ogi,
+  lutris,
 }

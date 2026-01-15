@@ -43,7 +43,7 @@ class _GameCardState extends State<GameCard> {
           : null,
         child: InkWell(
           borderRadius: BorderRadius.circular(SteamDeckConstants.cardRadius),
-          onTap: () => context.read<GamesCubit>().toggleGameSelection(widget.game.appName),
+          onTap: () => context.read<GamesCubit>().toggleGameSelection(widget.game.id),
           child: Padding(
             padding: const EdgeInsets.all(SteamDeckConstants.cardPadding),
             child: Row(
@@ -54,7 +54,7 @@ class _GameCardState extends State<GameCard> {
                   height: SteamDeckConstants.minTouchTarget,
                   child: Checkbox(
                     value: widget.game.isSelected,
-                    onChanged: (_) => context.read<GamesCubit>().toggleGameSelection(widget.game.appName),
+                    onChanged: (_) => context.read<GamesCubit>().toggleGameSelection(widget.game.id),
                   ),
                 ),
                 const SizedBox(width: SteamDeckConstants.elementGap),
@@ -74,7 +74,7 @@ class _GameCardState extends State<GameCard> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        widget.game.appName,
+                        widget.game.internalId,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: colorScheme.outline,
                         ),
