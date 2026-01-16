@@ -4,8 +4,10 @@ import 'package:heroic_lsfg_applier/core/theme/steam_deck_constants.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_cubit.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_state.dart';
 
-/// Bottom action bar with selection and apply/remove buttons
-/// Optimized for Steam Deck with large touch targets
+/// Bottom action bar with selection and apply/remove buttons.
+/// 
+/// Optimized for Steam Deck with large touch targets.
+/// Includes quick selection options and LSFG apply/remove actions.
 class GamesActionBar extends StatelessWidget {
   final VoidCallback onApply;
   final VoidCallback onRemove;
@@ -22,7 +24,10 @@ class GamesActionBar extends StatelessWidget {
       builder: (context, state) {
         if (state is! GamesLoaded) return const SizedBox.shrink();
         
-        final selectedCount = context.read<GamesCubit>().selectedCount;
+        final cubit = context.read<GamesCubit>();
+        final selectedCount = cubit.selectedCount;
+        final enabledCount = state.games.where((g) => g.hasLsfgEnabled).length;
+        final disabledCount = state.games.length - enabledCount;
         
         return Container(
           padding: const EdgeInsets.all(SteamDeckConstants.cardPadding),
@@ -38,7 +43,7 @@ class GamesActionBar extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Selection row with count
+                // Selection row with count and quick actions
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -52,23 +57,44 @@ class GamesActionBar extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${state.games.where((g) => g.hasLsfgEnabled).length} enabled / ${state.games.length} total',
+                          '$enabledCount enabled / ${state.games.length} total',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context).colorScheme.outline,
                           ),
                         ),
                       ],
                     ),
-                    Row(
-                      children: [
-                        TextButton(
-                          onPressed: () => context.read<GamesCubit>().selectAll(),
-                          child: const Text('Select All'),
+                    // Quick selection dropdown
+                    PopupMenuButton<_SelectionAction>(
+                      tooltip: 'Quick Selection',
+                      icon: const Icon(Icons.checklist),
+                      onSelected: (action) => _handleSelectionAction(context, cubit, action),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: _SelectionAction.all,
+                          child: ListTile(
+                            leading: Icon(Icons.select_all),
+                            title: Text('Select All'),
+                            dense: true,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        TextButton(
-                          onPressed: () => context.read<GamesCubit>().deselectAll(),
-                          child: const Text('Deselect All'),
+                        PopupMenuItem(
+                          value: _SelectionAction.withoutLsfg,
+                          enabled: disabledCount > 0,
+                          child: ListTile(
+                            leading: const Icon(Icons.remove_done),
+                            title: const Text('Select Without LSFG'),
+                            subtitle: Text('$disabledCount games'),
+                            dense: true,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: _SelectionAction.none,
+                          child: ListTile(
+                            leading: Icon(Icons.deselect),
+                            title: Text('Deselect All'),
+                            dense: true,
+                          ),
                         ),
                       ],
                     ),
@@ -104,4 +130,23 @@ class GamesActionBar extends StatelessWidget {
       },
     );
   }
+  
+  void _handleSelectionAction(BuildContext context, GamesCubit cubit, _SelectionAction action) {
+    switch (action) {
+      case _SelectionAction.all:
+        cubit.selectAll();
+        break;
+      case _SelectionAction.withoutLsfg:
+        cubit.selectAllWithoutLsfg();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Selected games without LSFG')),
+        );
+        break;
+      case _SelectionAction.none:
+        cubit.deselectAll();
+        break;
+    }
+  }
 }
+
+enum _SelectionAction { all, withoutLsfg, none }

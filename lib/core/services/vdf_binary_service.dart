@@ -1,6 +1,36 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+/// Service for encoding/decoding Steam's binary VDF (Valve Data Format) files.
+/// 
+/// ## Binary VDF Structure
+/// 
+/// Steam uses a binary format for files like `shortcuts.vdf`. The format is:
+/// - **0x00** (`_typeMap`): Nested object - followed by null-terminated key, then contents, then 0x08
+/// - **0x01** (`_typeString`): String value - followed by null-terminated key, then null-terminated value
+/// - **0x02** (`_typeInt32`): 32-bit integer - followed by null-terminated key, then 4-byte little-endian int
+/// - **0x08** (`_typeEnd`): End of current map/object
+/// 
+/// ## Example: shortcuts.vdf Structure
+/// 
+/// ```
+/// [0x00] "shortcuts" [null]           <- Root map called "shortcuts"
+///   [0x00] "0" [null]                 <- First shortcut (index "0")
+///     [0x01] "AppName" [null] "Game Title" [null]
+///     [0x01] "exe" [null] "/path/to/game" [null]
+///     [0x01] "LaunchOptions" [null] "" [null]
+///     [0x02] "appid" [null] [4 bytes: little-endian int]
+///     [0x02] "IsHidden" [null] [4 bytes: 0 or 1]
+///   [0x08]                            <- End of shortcut "0"
+///   [0x00] "1" [null]                 <- Second shortcut (index "1")
+///     ...
+///   [0x08]
+/// [0x08]                              <- End of root "shortcuts" map
+/// ```
+/// 
+/// ## References
+/// - https://developer.valvesoftware.com/wiki/VDF
+/// - https://developer.valvesoftware.com/wiki/Add_Non-Steam_Game
 class VdfBinaryService {
   static const int _typeMap = 0x00;
   static const int _typeString = 0x01;

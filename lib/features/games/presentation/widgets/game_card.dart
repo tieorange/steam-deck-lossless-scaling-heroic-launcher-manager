@@ -6,7 +6,12 @@ import 'package:heroic_lsfg_applier/core/theme/steam_deck_constants.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/entities/game_entity.dart';
 import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_cubit.dart';
 
-/// Card widget for displaying a single game - optimized for Steam Deck
+/// Card widget for displaying a single game - optimized for Steam Deck.
+/// 
+/// Features:
+/// - Large touch targets for Steam Deck touchscreen/trackpad
+/// - Focus handling for gamepad navigation
+/// - Tap to select, long-press for context menu
 class GameCard extends StatefulWidget {
   final Game game;
   
@@ -111,79 +116,132 @@ class _GameCardState extends State<GameCard> {
     return const GamePlaceholderIcon();
   }
 
-
   void _showContextMenu(BuildContext context) {
+    final cubit = context.read<GamesCubit>();
+    final game = widget.game;
+    
     showModalBottomSheet(
       context: context,
       builder: (btmContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Header with game name
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                game.title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const Divider(height: 1),
+            
+            // Apply LSFG option
             ListTile(
               leading: const Icon(Icons.add_circle_outline),
               title: const Text('Apply LSFG'),
               subtitle: const Text('Enable Frame Generation'),
-              onTap: () {
-                Navigator.pop(btmContext);
-                // We need to select it first if not selected, or just apply to it directly?
-                // The current API applies to *selected*.
-                // So we should select it (if not) and then trigger apply flow.
-                // But blindly changing selection might be annoying.
-                // Better: Just apply to this specific game? Repository supports list of IDs.
-                // But Cubit applyLsfgToSelected uses selection.
-                // Let's toggle it to selected, then use existing flow, or add 'apply to game' in Cubit.
-                // For now, toggle selection if needed, then ask user confirmation via main page logic?
-                // The main page logic is bound to the FAB/Action bar.
-                // A context menu should probably just trigger the action.
-                // Let's call a new method in Cubit or reuse logic.
-                // To reuse existing UI flows (confirmations), we can't easily do it from here without callbacks.
-                // SIMPLEST: Select this game (exclusive) and show confirmation?
-                // OR: Just select it and tell user "Selected".
-                // Let's just do selection toggle for now as a "Quick Select" is already tap.
-                // If the user wants to apply, they usually tap then click Apply.
-                // Long press to Apply immediately is a power user feature.
-                
-                // Let's implement: Select ONLY this game, then trigger apply confirmation?
-                // That might be disruptive.
-                
-                // Alternative: Add `applyLsfgToGame(String id)` to Cubit.
-                // I will skip complex logic and just make it Select/Deselect? No, tap does that.
-                // The requirement is "Context Menu... for quick apply/remove".
-                // So I really should support applying directly.
-                
-                // Hack: Select this game, deselect others?
-                context.read<GamesCubit>().deselectAll();
-                context.read<GamesCubit>().toggleGameSelection(widget.game.id);
-                // then what? trigger confirmation?
-                // We can't easily trigger the page's method from here.
-                // Getting complicated.
-                // Let's just show a SnackBar "Game Selected for Application" and maybe a button to Apply?
-                // Or, add `applyLsfgToGame` to Cubit.
-                
-                // Decided: Just Select (Exclusive)
-                context.read<GamesCubit>().deselectAll();
-                context.read<GamesCubit>().toggleGameSelection(widget.game.id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Game selected. Use the text at bottom to Apply.')),
-                );
-              },
+              enabled: !game.hasLsfgEnabled,
+              onTap: () => _applyLsfg(btmContext, cubit, game),
             ),
-             ListTile(
+            
+            // Remove LSFG option
+            ListTile(
               leading: const Icon(Icons.remove_circle_outline),
               title: const Text('Remove LSFG'),
-              onTap: () {
-                Navigator.pop(btmContext);
-                context.read<GamesCubit>().deselectAll();
-                context.read<GamesCubit>().toggleGameSelection(widget.game.id);
-                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Game selected. Use the text at bottom to Remove.')),
-                );
-              },
+              subtitle: const Text('Disable Frame Generation'),
+              enabled: game.hasLsfgEnabled,
+              onTap: () => _removeLsfg(btmContext, cubit, game),
             ),
           ],
         ),
       ),
     );
+  }
+  
+  Future<void> _applyLsfg(BuildContext btmContext, GamesCubit cubit, Game game) async {
+    Navigator.pop(btmContext);
+    
+    // Capture context-dependent values before async gaps
+    final messenger = ScaffoldMessenger.of(context);
+    final theme = Theme.of(context);
+    
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Apply LSFG?'),
+        content: Text(
+          'Enable Lossless Scaling frame generation for "${game.title}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      final success = await cubit.applyLsfgToGame(game.id);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(success 
+            ? 'LSFG applied to ${game.title}' 
+            : 'Failed to apply LSFG'),
+          backgroundColor: success ? null : theme.colorScheme.error,
+        ),
+      );
+    }
+  }
+  
+  Future<void> _removeLsfg(BuildContext btmContext, GamesCubit cubit, Game game) async {
+    Navigator.pop(btmContext);
+    
+    // Capture context-dependent values before async gaps
+    final messenger = ScaffoldMessenger.of(context);
+    final theme = Theme.of(context);
+    
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove LSFG?'),
+        content: Text(
+          'Disable Lossless Scaling frame generation for "${game.title}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      final success = await cubit.removeLsfgFromGame(game.id);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(success 
+            ? 'LSFG removed from ${game.title}' 
+            : 'Failed to remove LSFG'),
+          backgroundColor: success ? null : theme.colorScheme.error,
+        ),
+      );
+    }
   }
 }
 

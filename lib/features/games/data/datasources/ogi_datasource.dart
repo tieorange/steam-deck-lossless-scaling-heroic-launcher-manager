@@ -93,17 +93,19 @@ class OgiDatasource {
                 String newOpts = existingOpts;
                 
                 if (enable && !hasLsfg) {
-                  // Append ENV
+                  // Build environment variable prefix
                   final env = '${PlatformService.lsfgEnvKey}=${PlatformService.lsfgEnvValue}';
-                  newOpts = '$env %command% $existingOpts'; // Prepend implies env var usage?
-                  // Steam Launch Options syntax: VAR=VAL %command% args
-                  // Ideally we replace or prepend.
-                  // If user already has %command%, ensure it's structured right.
-                  // Simple approach: Prepend env
-                  if (!newOpts.contains('%command%')) {
-                     newOpts = '$env %command% $newOpts';
+                  
+                  // Steam Launch Options syntax: VAR=VAL %command% [additional args]
+                  // Check if user already has %command% in their options
+                  if (existingOpts.contains('%command%')) {
+                    // Prepend env var before existing options (which include %command%)
+                    newOpts = '$env $existingOpts';
                   } else {
-                     newOpts = '$env $newOpts';
+                    // No %command% present, add full syntax
+                    newOpts = existingOpts.isEmpty 
+                        ? '$env %command%'
+                        : '$env %command% $existingOpts';
                   }
                   modified = true;
                 } else if (!enable && hasLsfg) {
@@ -147,7 +149,7 @@ class OgiDatasource {
     }
   }
 
-  /// returns Map<GameTitle, matchesLsfg>
+  /// Returns a map of game title to LSFG enabled status.
   Future<Map<String, bool>> _getShortcutsLsfgStatus() async {
     final statusMap = <String, bool>{};
     final files = await _findShortcutsFiles();

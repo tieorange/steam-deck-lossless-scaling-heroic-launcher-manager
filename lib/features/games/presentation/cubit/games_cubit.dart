@@ -1,25 +1,32 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
-import 'package:heroic_lsfg_applier/features/backup/domain/repositories/backup_repository.dart';
-import 'package:heroic_lsfg_applier/features/settings/domain/repositories/settings_repository.dart';
-import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_state.dart';
-import 'package:heroic_lsfg_applier/features/settings/domain/entities/settings_entity.dart';
 import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
 import 'package:heroic_lsfg_applier/features/games/domain/entities/game_entity.dart';
+import 'package:heroic_lsfg_applier/features/games/domain/repositories/game_repository.dart';
+import 'package:heroic_lsfg_applier/features/games/domain/usecases/apply_lsfg_usecase.dart';
+import 'package:heroic_lsfg_applier/features/games/domain/usecases/remove_lsfg_usecase.dart';
+import 'package:heroic_lsfg_applier/features/games/presentation/cubit/games_state.dart';
 
-/// Cubit for managing games list state
+/// Cubit for managing games list state and selection.
+/// 
+/// Handles:
+/// - Loading games from all sources
+/// - Filtering and searching
+/// - Selection management
+/// - LSFG apply/remove operations via use cases
 class GamesCubit extends Cubit<GamesState> {
   final GameRepository _gameRepository;
-  final SettingsRepository _settingsRepository;
-  final BackupRepository _backupRepository;
+  final ApplyLsfgUseCase _applyLsfgUseCase;
+  final RemoveLsfgUseCase _removeLsfgUseCase;
   
   GamesCubit(
     this._gameRepository,
-    this._settingsRepository,
-    this._backupRepository,
+    this._applyLsfgUseCase,
+    this._removeLsfgUseCase,
   ) : super(const GamesState.loading());
   
-  /// Load all games from Heroic config
+  // ============ Loading ============
+  
+  /// Load all games from all sources (Heroic, OGI, Lutris)
   Future<void> loadGames() async {
     emit(const GamesState.loading());
     
@@ -33,6 +40,8 @@ class GamesCubit extends Cubit<GamesState> {
       )),
     );
   }
+  
+  // ============ Filtering ============
   
   /// Filter games by search query
   void search(String query) {
@@ -58,18 +67,11 @@ class GamesCubit extends Cubit<GamesState> {
           game.internalId.toLowerCase().contains(query.toLowerCase());
       
       // LSFG status filter
-      bool matchesLsfg = true;
-      switch (filter) {
-        case LsfgFilter.all:
-          matchesLsfg = true;
-          break;
-        case LsfgFilter.enabled:
-          matchesLsfg = game.hasLsfgEnabled;
-          break;
-        case LsfgFilter.disabled:
-          matchesLsfg = !game.hasLsfgEnabled;
-          break;
-      }
+      final matchesLsfg = switch (filter) {
+        LsfgFilter.all => true,
+        LsfgFilter.enabled => game.hasLsfgEnabled,
+        LsfgFilter.disabled => !game.hasLsfgEnabled,
+      };
       
       return matchesSearch && matchesLsfg;
     }).toList();
@@ -83,6 +85,8 @@ class GamesCubit extends Cubit<GamesState> {
       ));
     }
   }
+  
+  // ============ Selection ============
   
   /// Toggle selection of a single game
   void toggleGameSelection(String id) {
@@ -133,6 +137,33 @@ class GamesCubit extends Cubit<GamesState> {
     }
   }
   
+  /// Select all visible games that don't have LSFG enabled
+  void selectAllWithoutLsfg() {
+    final currentState = state;
+    if (currentState is GamesLoaded) {
+      final visibleIds = currentState.filteredGames
+          .where((g) => !g.hasLsfgEnabled)
+          .map((g) => g.id)
+          .toSet();
+      
+      final updatedGames = currentState.games.map((game) {
+        if (visibleIds.contains(game.id)) {
+          return game.copyWith(isSelected: true);
+        }
+        return game.copyWith(isSelected: false);
+      }).toList();
+      
+      final updatedFiltered = currentState.filteredGames.map((game) {
+        return game.copyWith(isSelected: !game.hasLsfgEnabled);
+      }).toList();
+      
+      emit(currentState.copyWith(
+        games: updatedGames,
+        filteredGames: updatedFiltered,
+      ));
+    }
+  }
+  
   /// Deselect all games
   void deselectAll() {
     final currentState = state;
@@ -152,8 +183,32 @@ class GamesCubit extends Cubit<GamesState> {
     }
   }
   
-  /// Apply LSFG to selected games
-  /// Returns true if successful, false otherwise
+  /// Get count of selected games
+  int get selectedCount {
+    final currentState = state;
+    if (currentState is GamesLoaded) {
+      return currentState.games.where((g) => g.isSelected).length;
+    }
+    return 0;
+  }
+  
+  /// Get count of games by type
+  Map<GameType, int> getGameCounts() {
+    final currentState = state;
+    if (currentState is GamesLoaded) {
+      return {
+        GameType.heroic: currentState.games.where((g) => g.type == GameType.heroic).length,
+        GameType.ogi: currentState.games.where((g) => g.type == GameType.ogi).length,
+        GameType.lutris: currentState.games.where((g) => g.type == GameType.lutris).length,
+      };
+    }
+    return {GameType.heroic: 0, GameType.ogi: 0, GameType.lutris: 0};
+  }
+  
+  // ============ LSFG Operations ============
+  
+  /// Apply LSFG to selected games.
+  /// Returns true if successful.
   Future<bool> applyLsfgToSelected() async {
     final currentState = state;
     if (currentState is GamesLoaded) {
@@ -162,58 +217,31 @@ class GamesCubit extends Cubit<GamesState> {
           .map((g) => g.id)
           .toList();
       
-      LoggerService.instance.log('[GamesCubit] applyLsfgToSelected called');
-      LoggerService.instance.log('[GamesCubit] Selected games: $selectedIds');
-      
       if (selectedIds.isEmpty) {
-        LoggerService.instance.log('[GamesCubit] No games selected, returning false');
+        LoggerService.instance.log('[GamesCubit] No games selected');
         return false;
       }
       
       emit(currentState.copyWith(isApplying: true));
       
-
+      final result = await _applyLsfgUseCase(selectedIds);
       
-      // Auto-backup if enabled
-      try {
-        final settingsResult = await _settingsRepository.getSettings();
-        final shouldBackup = settingsResult.getOrElse(() => const Settings()).autoBackup;
-        
-        if (shouldBackup) {
-          LoggerService.instance.log('[GamesCubit] Auto-backup enabled, creating backup...');
-          final backupResult = await _backupRepository.createBackup();
-          backupResult.fold(
-            (failure) => LoggerService.instance.log('[GamesCubit] Auto-backup failed: ${failure.message}'), // Non-fatal?
-            (backup) => LoggerService.instance.log('[GamesCubit] Auto-backup created: ${backup.name}'),
-          );
-        }
-      } catch (e) {
-        LoggerService.instance.log('[GamesCubit] Error checking settings for auto-backup: $e');
-      }
-      
-      LoggerService.instance.log('[GamesCubit] Calling repository.applyLsfgToGames...');
-      final result = await _gameRepository.applyLsfgToGames(selectedIds);
-      
-      bool success = false;
-      result.fold(
+      return result.fold(
         (failure) {
-          LoggerService.instance.log('[GamesCubit] Apply failed: ${failure.message}');
           emit(GamesState.error(message: failure.message));
+          return false;
         },
         (_) {
-          LoggerService.instance.log('[GamesCubit] Apply succeeded, reloading games...');
-          success = true;
           loadGames(); // Reload to reflect changes
+          return true;
         },
       );
-      return success;
     }
-    LoggerService.instance.log('[GamesCubit] State is not GamesLoaded, returning false');
     return false;
   }
   
-  /// Remove LSFG from selected games
-  /// Returns true if successful, false otherwise
+  /// Remove LSFG from selected games.
+  /// Returns true if successful.
   Future<bool> removeLsfgFromSelected() async {
     final currentState = state;
     if (currentState is GamesLoaded) {
@@ -222,43 +250,72 @@ class GamesCubit extends Cubit<GamesState> {
           .map((g) => g.id)
           .toList();
       
-      LoggerService.instance.log('[GamesCubit] removeLsfgFromSelected called');
-      LoggerService.instance.log('[GamesCubit] Selected games: $selectedIds');
-      
       if (selectedIds.isEmpty) {
-        LoggerService.instance.log('[GamesCubit] No games selected, returning false');
+        LoggerService.instance.log('[GamesCubit] No games selected');
         return false;
       }
       
       emit(currentState.copyWith(isApplying: true));
       
-      LoggerService.instance.log('[GamesCubit] Calling repository.removeLsfgFromGames...');
-      final result = await _gameRepository.removeLsfgFromGames(selectedIds);
+      final result = await _removeLsfgUseCase(selectedIds);
       
-      bool success = false;
-      result.fold(
+      return result.fold(
         (failure) {
-          LoggerService.instance.log('[GamesCubit] Remove failed: ${failure.message}');
           emit(GamesState.error(message: failure.message));
+          return false;
         },
         (_) {
-          LoggerService.instance.log('[GamesCubit] Remove succeeded, reloading games...');
-          success = true;
-          loadGames(); // Reload to reflect changes
+          loadGames();
+          return true;
         },
       );
-      return success;
     }
-    LoggerService.instance.log('[GamesCubit] State is not GamesLoaded, returning false');
     return false;
   }
   
-  /// Get count of selected games
-  int get selectedCount {
+  /// Apply LSFG to a single game by ID.
+  /// Returns true if successful.
+  Future<bool> applyLsfgToGame(String gameId) async {
     final currentState = state;
     if (currentState is GamesLoaded) {
-      return currentState.games.where((g) => g.isSelected).length;
+      emit(currentState.copyWith(isApplying: true));
+      
+      final result = await _applyLsfgUseCase([gameId]);
+      
+      return result.fold(
+        (failure) {
+          emit(GamesState.error(message: failure.message));
+          return false;
+        },
+        (_) {
+          loadGames();
+          return true;
+        },
+      );
     }
-    return 0;
+    return false;
+  }
+  
+  /// Remove LSFG from a single game by ID.
+  /// Returns true if successful.
+  Future<bool> removeLsfgFromGame(String gameId) async {
+    final currentState = state;
+    if (currentState is GamesLoaded) {
+      emit(currentState.copyWith(isApplying: true));
+      
+      final result = await _removeLsfgUseCase([gameId]);
+      
+      return result.fold(
+        (failure) {
+          emit(GamesState.error(message: failure.message));
+          return false;
+        },
+        (_) {
+          loadGames();
+          return true;
+        },
+      );
+    }
+    return false;
   }
 }
