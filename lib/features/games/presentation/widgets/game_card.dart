@@ -113,13 +113,6 @@ class _GameCardState extends State<GameCard> {
 
 
   void _showContextMenu(BuildContext context) {
-    if (widget.game.type == GameType.ogi) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Context actions not supported for OpenGameInstaller games yet.')),
-      );
-      return;
-    }
-
     showModalBottomSheet(
       context: context,
       builder: (btmContext) => SafeArea(

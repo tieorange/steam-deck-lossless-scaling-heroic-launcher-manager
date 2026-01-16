@@ -140,33 +140,6 @@ class _GamesPageState extends State<GamesPage> {
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               
-              // Check for OGI games
-              final hasOgiSelected = cubit.state.maybeWhen(
-                loaded: (games, _, __, ___, ____) => games
-                    .any((g) => g.isSelected && g.type == GameType.ogi),
-                orElse: () => false,
-              );
-              
-              if (hasOgiSelected) {
-                if (context.mounted) {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Applying LSFG to OpenGameInstaller games is not yet supported.'),
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                      action: SnackBarAction(
-                        label: 'Deselect OGI', 
-                        textColor: Colors.white,
-                        onPressed: () {
-                           // Logic to deselect OGI could be added to cubit, 
-                           // but for now user has to do it manually or we apply to others.
-                        }
-                      ),
-                    ),
-                  );
-                }
-                return;
-              }
-
               final success = await cubit.applyLsfgToSelected();
               if (context.mounted) {
                 if (success) {

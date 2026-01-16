@@ -17,8 +17,11 @@ import 'package:heroic_lsfg_applier/core/logging/logger_service.dart';
 /// Implementation of GameRepository using local file system
 class GameRepositoryImpl implements GameRepository {
   final PlatformService _platformService;
+  late final OgiDatasource _ogiDatasource;
   
-  GameRepositoryImpl(this._platformService);
+  GameRepositoryImpl(this._platformService) {
+    _ogiDatasource = OgiDatasource(_platformService);
+  }
   
   @override
   Future<Result<List<Game>>> getGames() async {
@@ -54,8 +57,7 @@ class GameRepositoryImpl implements GameRepository {
       // 2. Fetch OGI Games
       try {
         LoggerService.instance.log('[GameRepository] Checking OGI library: ${_platformService.ogiLibraryPath}');
-        final ogiDatasource = OgiDatasource(_platformService);
-        final ogiGames = await ogiDatasource.getOgiGames();
+        final ogiGames = await _ogiDatasource.getOgiGames();
         if (ogiGames.isNotEmpty) {
           anySourceFound = true;
           games.addAll(ogiGames);
@@ -189,10 +191,7 @@ class GameRepositoryImpl implements GameRepository {
   Future<void> _modifyGameConfig(String id, {required bool addLsfg}) async {
     final parts = id.split(':');
     if (parts.length < 2) {
-       // Check if it's a legacy ID (probably Heroic if no prefix)
-       // Or throw. Assuming new format is enforced.
        LoggerService.instance.log('Invalid Game ID format: $id. Assuming legacy/Heroic.');
-       // If legacy, assume Heroic path
        await _modifyHeroicConfig(id, addLsfg: addLsfg);
        return;
     }
@@ -205,8 +204,16 @@ class GameRepositoryImpl implements GameRepository {
     if (source == 'heroic') {
        await _modifyHeroicConfig(appName, addLsfg: addLsfg);
     } else if (source == 'ogi') {
-       LoggerService.instance.log('[GameRepository] Found OGI game, but shortcuts editing not implemented');
-       throw Exception('LSFG Support for OpenGameInstaller games is not yet implemented (requires Steam Shortcuts editing).');
+       // We need to look up the Title!
+       LoggerService.instance.log('[GameRepository] Modifying OGI game: $appName');
+       final ogiGames = await _ogiDatasource.getOgiGames();
+       try {
+         final game = ogiGames.firstWhere((g) => g.internalId == appName);
+         await _ogiDatasource.applyLsfgToOgiGame(appName, game.title, addLsfg);
+       } catch (e) {
+          LoggerService.instance.log('[GameRepository] Failed to find OGI game details for id: $appName. Error: $e');
+          throw Exception('Game not found in OGI library: $appName');
+       }
     } else if (source == 'lutris') {
        await _modifyLutrisConfig(appName, addLsfg: addLsfg);
     } else {
