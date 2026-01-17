@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:heroic_lsfg_applier/core/theme/steam_deck_constants.dart';
 import 'package:heroic_lsfg_applier/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:heroic_lsfg_applier/features/settings/presentation/cubit/settings_state.dart';
+import 'package:heroic_lsfg_applier/features/update/presentation/widgets/update_dialog.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -68,6 +69,27 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 _SettingsSection(
+                  title: 'Updates',
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Check for Updates on Startup'),
+                      subtitle: const Text('Automatically check GitHub for new versions'),
+                      value: settings.checkForUpdatesOnStartup,
+                      onChanged: (value) => context.read<SettingsCubit>().toggleCheckForUpdates(value),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.update),
+                      title: const Text('Check for Updates Now'),
+                      subtitle: const Text('Manually check for available updates'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        _checkForUpdates(context);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _SettingsSection(
                   title: 'App Info',
                   children: [
                     ListTile(
@@ -95,6 +117,10 @@ class SettingsPage extends StatelessWidget {
       case ThemeMode.light: return 'Light Mode';
       case ThemeMode.dark: return 'Dark Mode';
     }
+  }
+  
+  void _checkForUpdates(BuildContext context) {
+    UpdateDialog.show(context);
   }
 }
 

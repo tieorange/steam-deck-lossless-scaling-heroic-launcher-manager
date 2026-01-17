@@ -27,9 +27,20 @@ A Flutter desktop application for **Steam Deck** that enables **Lossless Scaling
 
 ## 📦 Installation
 
-### Method 1: Download Release (Recommended) 
+### Method 1: One-Liner Install (Recommended) 🚀
 
-1. **Download** the latest `heroic_lsfg_applier_linux_x64.zip` from Releases
+Open Konsole (terminal) on your Steam Deck in Desktop Mode and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tieorange/heroic-lsfg-applier/main/install.sh | bash
+```
+
+The app will be installed and appear in your application menu! 🎉  
+**Auto-updates are enabled by default** - the app checks for updates on startup.
+
+### Method 2: Download Release
+
+1. **Download** the latest `heroic_lsfg_applier_linux_x64.zip` from [Releases](https://github.com/tieorange/heroic-lsfg-applier/releases)
 2. **Transfer** the zip to your Steam Deck (Desktop Mode)
 3. **Extract** the zip file
 4. **Run the installer**:
@@ -37,13 +48,11 @@ A Flutter desktop application for **Steam Deck** that enables **Lossless Scaling
    ./install_local.sh
    ```
 
-The app will appear in your application menu! 🎉
-
-### Method 2: Build from Source
+### Method 3: Build from Source
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/heroic-lsfg-applier.git
+git clone https://github.com/tieorange/heroic-lsfg-applier.git
 cd heroic-lsfg-applier
 
 # Build on Steam Deck
@@ -51,6 +60,12 @@ cd heroic-lsfg-applier
 
 # Install
 ./scripts/install_local.sh
+```
+
+### Uninstall
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tieorange/heroic-lsfg-applier/main/uninstall.sh | bash
 ```
 
 ---

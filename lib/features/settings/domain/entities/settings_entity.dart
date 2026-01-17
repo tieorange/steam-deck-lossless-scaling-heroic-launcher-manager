@@ -15,5 +15,8 @@ class Settings with _$Settings {
     
     /// Whether to show confirmation dialogs for actions
     @Default(true) bool showConfirmations,
+    
+    /// Whether to check for updates on app startup
+    @Default(true) bool checkForUpdatesOnStartup,
   }) = _Settings;
 }

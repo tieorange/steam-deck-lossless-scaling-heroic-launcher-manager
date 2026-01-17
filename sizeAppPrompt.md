@@ -42,43 +42,81 @@ dev_dependencies:
 lib/
 ├── main.dart
 ├── core/
-│   ├── constants.dart
+│   ├── constants.dart              # App-wide constants, size thresholds
 │   ├── di/injection.dart           # GetIt DI configuration
 │   ├── error/failures.dart         # Result<T> = Either<Failure, T>
+│   ├── extensions/
+│   │   └── size_formatter.dart     # int.toHumanReadableSize() extension
 │   ├── logging/logger_service.dart
 │   ├── platform/platform_service.dart
 │   ├── router/
 │   │   ├── app_router.dart
 │   │   └── app_shell.dart          # Bottom navigation shell
+│   ├── services/
+│   │   └── disk_size_service.dart  # Directory size calculation
 │   └── theme/
 │       ├── app_theme.dart
 │       └── steam_deck_constants.dart
 │
 └── features/
-    ├── games/
+    │
+    ├── dashboard/                  # Overview & quick stats
+    │   └── presentation/
+    │       ├── cubit/
+    │       │   ├── dashboard_cubit.dart
+    │       │   └── dashboard_state.dart
+    │       ├── pages/dashboard_page.dart
+    │       └── widgets/
+    │           ├── storage_overview_card.dart   # Total used / free
+    │           ├── launcher_breakdown_chart.dart # Pie chart by source
+    │           └── top_games_list.dart          # Top 5 largest games
+    │
+    ├── games/                      # Full game list & uninstall
     │   ├── data/
-    │   │   ├── datasources/        # Per-launcher data access
+    │   │   ├── datasources/        # Per-launcher data reading
     │   │   │   ├── heroic_datasource.dart
+    │   │   │   ├── ogi_datasource.dart
     │   │   │   ├── lutris_datasource.dart
     │   │   │   └── steam_datasource.dart
     │   │   ├── models/
+    │   │   │   └── game_model.dart
     │   │   └── repositories/
     │   │       ├── game_repository_impl.dart
     │   │       └── mock_game_repository.dart
     │   ├── domain/
-    │   │   ├── entities/game_entity.dart    # freezed
+    │   │   ├── entities/game_entity.dart
     │   │   ├── repositories/game_repository.dart
     │   │   └── usecases/
-    │   │       ├── get_games_sorted_by_size_usecase.dart
+    │   │       ├── get_all_games_usecase.dart
+    │   │       ├── calculate_game_size_usecase.dart
     │   │       └── uninstall_game_usecase.dart
     │   └── presentation/
     │       ├── cubit/
     │       │   ├── games_cubit.dart
-    │       │   └── games_state.dart         # freezed
+    │       │   └── games_state.dart
     │       ├── pages/games_page.dart
     │       └── widgets/
     │           ├── game_list_item.dart
-    │           └── size_breakdown_chart.dart
+    │           ├── game_list_header.dart        # Sort controls
+    │           ├── source_filter_chips.dart     # Heroic|Lutris|Steam tabs
+    │           └── uninstall_confirm_dialog.dart
+    │
+    ├── storage/                    # Storage analytics & cleanup
+    │   ├── data/
+    │   │   └── repositories/
+    │   │       └── storage_repository_impl.dart
+    │   ├── domain/
+    │   │   ├── entities/storage_info.dart       # Drive stats
+    │   │   └── repositories/storage_repository.dart
+    │   └── presentation/
+    │       ├── cubit/
+    │       │   ├── storage_cubit.dart
+    │       │   └── storage_state.dart
+    │       ├── pages/storage_page.dart
+    │       └── widgets/
+    │           ├── disk_usage_bar.dart          # Visual bar
+    │           ├── folder_size_tree.dart        # Expandable tree view
+    │           └── cleanup_suggestions.dart     # Cache, logs, etc.
     │
     └── settings/
         ├── data/repositories/settings_repository_impl.dart
@@ -87,7 +125,9 @@ lib/
         │   └── repositories/settings_repository.dart
         └── presentation/
             ├── cubit/settings_cubit.dart
-            └── pages/settings_page.dart
+            ├── pages/settings_page.dart
+            └── widgets/
+                └── launcher_path_config.dart    # Custom paths per launcher
 ```
 
 ---
@@ -110,66 +150,134 @@ class Game with _$Game {
 
 enum GameSource {
   heroic,
+  ogi,      // OpenGameInstaller
   lutris,
   steam,
-  // Add more as needed
 }
 ```
 
 ---
 
-## Data Sources - Where to Read Game Data
+## Data Sources - Where to Read Game Data (Steam Deck)
+
+> **Note:** On Steam Deck, most apps are installed via Flatpak, which uses sandboxed paths under `~/.var/app/`.
 
 ### 1. Heroic Games Launcher (Epic + GOG)
 
-**Config Locations (Linux/Steam Deck):**
-- Standard: `~/.config/heroic/`
-- Flatpak: `~/.var/app/com.heroicgameslauncher.hgl/config/heroic/`
+**Config Locations (Steam Deck - Flatpak):**
+```
+~/.var/app/com.heroicgameslauncher.hgl/config/heroic/
+```
 
-**Key Files:**
-| File | Purpose |
+| Path | Purpose |
 |------|---------|
-| `GamesConfig/*.json` | Per-game settings, contains `install.install_path` |
-| `store_cache/gog_library.json` | GOG game metadata |
-| `legendaryConfig/legendary/installed.json` | Epic games install info |
+| `config/heroic/GamesConfig/*.json` | Per-game settings |
+| `config/heroic/store_cache/gog_library.json` | GOG game metadata |
+| `config/legendary/installed.json` | **Epic games install paths & sizes** |
 
-**How to get install path:**
-1. Read `legendaryConfig/legendary/installed.json`
-2. Each game has `install_path` field
-3. Calculate directory size with `du -sb` or Dart's recursive file listing
+**Key file: `installed.json`** (Epic Games via Legendary)
+```json
+{
+  "Fortnite": {
+    "app_name": "Fortnite",
+    "title": "Fortnite",
+    "install_path": "/home/deck/Games/Heroic/Fortnite",
+    "install_size": 95367431168
+  }
+}
+```
+
+> **Tip:** `install_size` is already available in bytes! No need to calculate for Epic games.
 
 ### 2. Lutris
 
-**Config Locations:**
-- Games DB: `~/.local/share/lutris/pga.db` (SQLite)
-- Game configs: `~/.config/lutris/games/*.yml`
+**Config Locations (Steam Deck - Flatpak):**
+```
+~/.var/app/net.lutris.Lutris/data/lutris/pga.db     # SQLite database
+~/.var/app/net.lutris.Lutris/config/lutris/games/   # YAML configs
+```
+
+**Standard Linux (non-Flatpak):**
+```
+~/.local/share/lutris/pga.db
+~/.config/lutris/games/*.yml
+```
 
 **From SQLite (`pga.db`):**
 ```sql
-SELECT name, slug, directory FROM games WHERE installed = 1;
+SELECT id, name, slug, directory, installed FROM games WHERE installed = 1;
 ```
 
-The `directory` column contains the install path. Calculate its size.
-
-**From YAML files:**
-Each `.yml` file has a `game.prefix` or `game.exe` field that points to the installation.
+The `directory` column contains the install path. Calculate size recursively.
 
 ### 3. Steam (Native)
 
-**Config Locations:**
-- Library folders: `~/.steam/steam/steamapps/libraryfolders.vdf`
-- App manifests: `~/.steam/steam/steamapps/appmanifest_*.acf`
+**Config Locations (Steam Deck):**
+```
+/home/deck/.local/share/Steam/steamapps/            # Primary location
+/home/deck/.steam/steam/steamapps/                  # Symlink (same location)
+```
+
+| File | Purpose |
+|------|---------|
+| `libraryfolders.vdf` | Lists all Steam library folders (internal + SD card) |
+| `appmanifest_<appid>.acf` | Per-game metadata including **SizeOnDisk** |
 
 **From `appmanifest_*.acf`:**
 ```
 "AppState"
 {
-    "appid" "123456"
-    "name" "Game Name"
-    "installdir" "GameFolder"
-    "SizeOnDisk" "12345678900"   // Already has size!
+    "appid" "1245620"
+    "name" "Elden Ring"
+    "installdir" "ELDEN RING"
+    "SizeOnDisk" "49283174400"
 }
 ```
+
+> **Tip:** Steam already provides `SizeOnDisk` in bytes! Parse directly, no calculation needed.
+
+### 4. OpenGameInstaller (OGI)
+
+[OpenGameInstaller](https://github.com/Nat3z/OpenGameInstaller) is a game installation platform that integrates with Steam as non-Steam games.
+
+**Config Locations (Steam Deck):**
+```
+~/.local/share/OpenGameInstaller/library/    # Game metadata JSON files
+```
+
+**Library structure:**
+```
+library/
+├── game-slug-1.json
+├── game-slug-2.json
+└── ...
+```
+
+**Game JSON format:**
+```json
+{
+  "name": "Game Title",
+  "appID": "game-slug",
+  "titleImage": "https://...",
+  "installLocation": "/home/deck/Games/OGI/GameTitle"
+}
+```
+
+**Key fields:**
+| Field | Purpose |
+|-------|---------|
+| `name` | Display title |
+| `appID` | Unique game identifier (slug) |
+| `installLocation` | **Path to game installation** |
+| `titleImage` | URL to game cover art |
+
+**Steam Integration:**
+OGI games are added as non-Steam games, appearing in Steam's `shortcuts.vdf` (binary VDF format):
+```
+~/.local/share/Steam/userdata/<user_id>/config/shortcuts.vdf
+```
+
+To get size: Calculate `installLocation` directory size recursively.
 
 ---
 
@@ -179,7 +287,7 @@ Each `.yml` file has a `game.prefix` or `game.exe` field that points to the inst
 - Display all games from all sources in a unified list
 - **Sort by size (descending)** by default
 - Show: Title, Source icon, Size (human-readable), Install path
-- Tab filters: All | Heroic | Lutris | Steam
+- Tab filters: All | Heroic | OGI | Lutris | Steam
 
 ### 2. Size Calculation
 ```dart
@@ -199,11 +307,19 @@ Future<int> calculateDirectorySize(String path) async {
 
 ### 3. Uninstall Games
 
-| Source | Uninstall Method |
-|--------|------------------|
-| **Heroic** | Run `heroic --uninstall <appName>` or delete install folder + remove from `installed.json` |
-| **Lutris** | Run `lutris -r <slug>` to remove or delete directory + update `pga.db` |
-| **Steam** | Use `steam steam://uninstall/<appid>` protocol |
+| Source | Uninstall Method | Notes |
+|--------|------------------|-------|
+| **Heroic (Epic)** | `legendary uninstall <app_name>` | Uses bundled Legendary CLI |
+| **Heroic (GOG)** | Delete `install_path` folder + remove entry from GOG cache | No CLI available |
+| **OGI** | Delete `installLocation` folder + remove JSON from `library/` | Also removes from Steam shortcuts |
+| **Lutris** | Delete `directory` folder + `DELETE FROM games WHERE slug='...'` in `pga.db` | **No CLI for uninstall** - must manually delete |
+| **Steam** | `steam steam://uninstall/<appid>` | Opens Steam uninstall dialog |
+
+**Recommended: Safe deletion approach**
+1. Show confirmation dialog with game name and size
+2. Delete the `install_path` directory recursively
+3. Update/remove entry from launcher's database/config
+4. Refresh game list
 
 ### 4. Visual Features
 - Size breakdown pie/bar chart by launcher
@@ -217,20 +333,31 @@ Future<int> calculateDirectorySize(String path) async {
 
 ```dart
 abstract class PlatformService {
-  // Heroic paths
-  String get heroicConfigPath;
-  String get heroicFlatpakConfigPath;
-  String get legendaryInstalledJsonPath;
+  // Home directory
+  String get homeDir; // /home/deck on Steam Deck
   
-  // Lutris paths  
-  String get lutrisDbPath;      // ~/.local/share/lutris/pga.db
-  String get lutrisConfigPath;  // ~/.config/lutris/games/
+  // Heroic paths (check Flatpak first, then standard)
+  String get heroicFlatpakPath => '$homeDir/.var/app/com.heroicgameslauncher.hgl/config';
+  String get heroicStandardPath => '$homeDir/.config/heroic';
+  String get heroicConfigPath; // Returns whichever exists
+  String get legendaryInstalledJsonPath; // .../legendary/installed.json
+  
+  // OGI paths
+  String get ogiLibraryPath => '$homeDir/.local/share/OpenGameInstaller/library';
+  
+  // Lutris paths (check Flatpak first, then standard)  
+  String get lutrisFlatpakDbPath => '$homeDir/.var/app/net.lutris.Lutris/data/lutris/pga.db';
+  String get lutrisStandardDbPath => '$homeDir/.local/share/lutris/pga.db';
+  String get lutrisDbPath; // Returns whichever exists
   
   // Steam paths
-  String get steamAppsPath;     // ~/.steam/steam/steamapps/
+  String get steamAppsPath => '$homeDir/.local/share/Steam/steamapps';
+  String get steamUserDataPath => '$homeDir/.local/share/Steam/userdata'; // For shortcuts.vdf
+  List<String> get allSteamLibraryPaths; // Parses libraryfolders.vdf for SD card paths
   
-  // Check which launchers are installed
+  // Launcher detection
   bool get isHeroicInstalled;
+  bool get isOgiInstalled;
   bool get isLutrisInstalled;
   bool get isSteamInstalled;
 }
@@ -275,27 +402,62 @@ class MockGameRepository implements GameRepository {
 
 ## UI Design Requirements
 
+### Steam Deck Hardware Specs (for reference)
+- **Screen:** 7" 1280x800 touchscreen
+- **Input:** Touchscreen, trackpads, D-pad, ABXY buttons, triggers
+- **Recommended touch target:** 48-64px minimum
+
 ### Steam Deck Optimization
-- **Minimum touch target:** 48px height
-- **Large fonts:** 16px minimum for body text
-- **High contrast:** Ensure readability on Steam Deck's screen
-- **Bottom action bar:** Easy thumb access for delete/refresh actions
-- **Gamepad navigation support:** Focus indicators, D-pad navigation
+- **Minimum touch target:** 48px height (64px preferred)
+- **Large fonts:** 16px minimum for body, 14px minimum for secondary text
+- **High contrast:** Dark theme optimized for LCD/OLED
+- **Bottom action bar:** Easy thumb access when holding device
+- **Focus indicators:** Visible highlight rings for gamepad navigation
+- **D-pad navigation:** Logical focus order (up/down through list, left/right for tabs)
+- **Button prompts:** Show A/B/X/Y prompts for actions (e.g., "A: Select, X: Uninstall")
+
+### Gamepad Navigation Implementation
+```dart
+// Use Flutter's Focus system
+FocusableActionDetector(
+  onShowFocusHighlight: (focused) => setState(() => _focused = focused),
+  actions: {
+    ActivateIntent: CallbackAction(onInvoke: (_) => _onTap()),
+  },
+  child: Container(
+    decoration: _focused ? focusDecoration : null,
+    child: gameListItem,
+  ),
+)
+```
 
 ### Key UI Components
 
-1. **Header:** Total disk usage summary (e.g., "Games: 245 GB / 512 GB")
-2. **Game List:** Scrollable list sorted by size
-3. **Game Item:** 
-   - Large touch target (64px height minimum)
-   - Game icon (48x48)
-   - Title + Source badge
-   - Size (bold, right-aligned)
-   - Selection checkbox
-4. **Action Bar:** 
-   - "Uninstall Selected" button
-   - "Refresh Sizes" button
-   - Sort options dropdown
+1. **Header Card:** Total disk usage with progress bar
+   - "Games: 245 GB / 512 GB (48%)"
+   - Color-coded: green (<70%), yellow (70-90%), red (>90%)
+
+2. **Source Tabs:** Horizontal chip row (All | Heroic | Lutris | Steam)
+   - Show count per source: "Heroic (12)"
+
+3. **Game List:** Scrollable, sorted by size descending
+   - Pull-to-refresh support
+   - Lazy loading for large libraries
+
+4. **Game Item (64px height):**
+   ```
+   ┌────────────────────────────────────────────────────┐
+   │ [✓] [Icon] Cyberpunk 2077          [Heroic] 75.2 GB│
+   │                                    /home/deck/Games│
+   └────────────────────────────────────────────────────┘
+   ```
+   - Checkbox (left), Icon (48x48), Title, Source badge, Size (bold)
+   - Secondary line: truncated install path
+
+5. **Bottom Action Bar (sticky):**
+   - Left: "X selected (120 GB)"
+   - Right: [Uninstall] [Refresh] buttons
+   - Gamepad: X = Uninstall, Y = Refresh
 
 ---
 

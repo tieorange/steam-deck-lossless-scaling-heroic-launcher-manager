@@ -51,4 +51,12 @@ class SettingsCubit extends Cubit<SettingsState> {
       await updateSettings(newSettings);
     }
   }
+  
+  Future<void> toggleCheckForUpdates(bool value) async {
+    if (state is SettingsLoaded) {
+      final current = (state as SettingsLoaded).settings;
+      final newSettings = current.copyWith(checkForUpdatesOnStartup: value);
+      await updateSettings(newSettings);
+    }
+  }
 }

@@ -12,6 +12,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   static const String _themeKey = 'theme_mode';
   static const String _autoBackupKey = 'auto_backup';
   static const String _confirmationsKey = 'show_confirmations';
+  static const String _checkUpdatesKey = 'check_for_updates_on_startup';
   
   SettingsRepositoryImpl(this._prefs);
   
@@ -21,6 +22,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
       final themeIndex = _prefs.getInt(_themeKey) ?? ThemeMode.system.index;
       final autoBackup = _prefs.getBool(_autoBackupKey) ?? true;
       final showConfirmations = _prefs.getBool(_confirmationsKey) ?? true;
+      final checkForUpdates = _prefs.getBool(_checkUpdatesKey) ?? true;
       
       // Safety check for theme index
       final themeMode = ThemeMode.values.length > themeIndex 
@@ -31,6 +33,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
         themeMode: themeMode,
         autoBackup: autoBackup,
         showConfirmations: showConfirmations,
+        checkForUpdatesOnStartup: checkForUpdates,
       ));
     } catch (e) {
       return Left(CacheFailure('Failed to load settings: $e'));
@@ -44,6 +47,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
         _prefs.setInt(_themeKey, settings.themeMode.index),
         _prefs.setBool(_autoBackupKey, settings.autoBackup),
         _prefs.setBool(_confirmationsKey, settings.showConfirmations),
+        _prefs.setBool(_checkUpdatesKey, settings.checkForUpdatesOnStartup),
       ]);
       return const Right(unit);
     } catch (e) {

@@ -26,6 +26,9 @@ mixin _$Settings {
   /// Whether to show confirmation dialogs for actions
   bool get showConfirmations => throw _privateConstructorUsedError;
 
+  /// Whether to check for updates on app startup
+  bool get checkForUpdatesOnStartup => throw _privateConstructorUsedError;
+
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -38,7 +41,12 @@ abstract class $SettingsCopyWith<$Res> {
   factory $SettingsCopyWith(Settings value, $Res Function(Settings) then) =
       _$SettingsCopyWithImpl<$Res, Settings>;
   @useResult
-  $Res call({ThemeMode themeMode, bool autoBackup, bool showConfirmations});
+  $Res call({
+    ThemeMode themeMode,
+    bool autoBackup,
+    bool showConfirmations,
+    bool checkForUpdatesOnStartup,
+  });
 }
 
 /// @nodoc
@@ -59,6 +67,7 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
     Object? themeMode = null,
     Object? autoBackup = null,
     Object? showConfirmations = null,
+    Object? checkForUpdatesOnStartup = null,
   }) {
     return _then(
       _value.copyWith(
@@ -73,6 +82,10 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
             showConfirmations: null == showConfirmations
                 ? _value.showConfirmations
                 : showConfirmations // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            checkForUpdatesOnStartup: null == checkForUpdatesOnStartup
+                ? _value.checkForUpdatesOnStartup
+                : checkForUpdatesOnStartup // ignore: cast_nullable_to_non_nullable
                       as bool,
           )
           as $Val,
@@ -89,7 +102,12 @@ abstract class _$$SettingsImplCopyWith<$Res>
   ) = __$$SettingsImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({ThemeMode themeMode, bool autoBackup, bool showConfirmations});
+  $Res call({
+    ThemeMode themeMode,
+    bool autoBackup,
+    bool showConfirmations,
+    bool checkForUpdatesOnStartup,
+  });
 }
 
 /// @nodoc
@@ -109,6 +127,7 @@ class __$$SettingsImplCopyWithImpl<$Res>
     Object? themeMode = null,
     Object? autoBackup = null,
     Object? showConfirmations = null,
+    Object? checkForUpdatesOnStartup = null,
   }) {
     return _then(
       _$SettingsImpl(
@@ -124,6 +143,10 @@ class __$$SettingsImplCopyWithImpl<$Res>
             ? _value.showConfirmations
             : showConfirmations // ignore: cast_nullable_to_non_nullable
                   as bool,
+        checkForUpdatesOnStartup: null == checkForUpdatesOnStartup
+            ? _value.checkForUpdatesOnStartup
+            : checkForUpdatesOnStartup // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -136,6 +159,7 @@ class _$SettingsImpl implements _Settings {
     this.themeMode = ThemeMode.system,
     this.autoBackup = true,
     this.showConfirmations = true,
+    this.checkForUpdatesOnStartup = true,
   });
 
   /// Current theme mode
@@ -153,9 +177,14 @@ class _$SettingsImpl implements _Settings {
   @JsonKey()
   final bool showConfirmations;
 
+  /// Whether to check for updates on app startup
+  @override
+  @JsonKey()
+  final bool checkForUpdatesOnStartup;
+
   @override
   String toString() {
-    return 'Settings(themeMode: $themeMode, autoBackup: $autoBackup, showConfirmations: $showConfirmations)';
+    return 'Settings(themeMode: $themeMode, autoBackup: $autoBackup, showConfirmations: $showConfirmations, checkForUpdatesOnStartup: $checkForUpdatesOnStartup)';
   }
 
   @override
@@ -168,12 +197,22 @@ class _$SettingsImpl implements _Settings {
             (identical(other.autoBackup, autoBackup) ||
                 other.autoBackup == autoBackup) &&
             (identical(other.showConfirmations, showConfirmations) ||
-                other.showConfirmations == showConfirmations));
+                other.showConfirmations == showConfirmations) &&
+            (identical(
+                  other.checkForUpdatesOnStartup,
+                  checkForUpdatesOnStartup,
+                ) ||
+                other.checkForUpdatesOnStartup == checkForUpdatesOnStartup));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, themeMode, autoBackup, showConfirmations);
+  int get hashCode => Object.hash(
+    runtimeType,
+    themeMode,
+    autoBackup,
+    showConfirmations,
+    checkForUpdatesOnStartup,
+  );
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
@@ -189,6 +228,7 @@ abstract class _Settings implements Settings {
     final ThemeMode themeMode,
     final bool autoBackup,
     final bool showConfirmations,
+    final bool checkForUpdatesOnStartup,
   }) = _$SettingsImpl;
 
   /// Current theme mode
@@ -202,6 +242,10 @@ abstract class _Settings implements Settings {
   /// Whether to show confirmation dialogs for actions
   @override
   bool get showConfirmations;
+
+  /// Whether to check for updates on app startup
+  @override
+  bool get checkForUpdatesOnStartup;
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
