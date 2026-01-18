@@ -5,22 +5,22 @@ import 'dart:io';
 abstract class PlatformService {
   /// Base path for Heroic config (contains GamesConfig folder)
   String get heroicConfigPath;
-  
+
   /// Path to GamesConfig directory with individual game JSON files
   String get gameConfigPath;
-  
+
   /// Path to Heroic icon cache
   String get iconCachePath;
-  
+
   /// Base path for our app's backups
   String get backupBasePath;
-  
+
   /// Check if Heroic config exists
   bool get heroicConfigExists => Directory(heroicConfigPath).existsSync();
-  
+
   /// Environment variable key we're adding
   static const String lsfgEnvKey = 'LSFG_PROCESS';
-  
+
   /// Environment variable value we're setting
   static const String lsfgEnvValue = 'decky-lsfg-vk';
 
@@ -28,7 +28,12 @@ abstract class PlatformService {
   String get ogiLibraryPath;
 
   /// Path to Steam user data (containing shortcuts.vdf)
+  /// Deprecated: Use [steamUserDataPaths] instead
+  @Deprecated('Use steamUserDataPaths')
   String get steamUserDataPath;
+
+  /// List of potential paths to Steam user data
+  List<String> get steamUserDataPaths;
 
   /// Path to Lutris games config directory
   String get lutrisConfigPath;
@@ -37,11 +42,11 @@ abstract class PlatformService {
 /// Linux implementation for real Steam Deck/Linux usage
 class LinuxPlatformService extends PlatformService {
   late final String _homeDir;
-  
+
   LinuxPlatformService() {
     _homeDir = Platform.environment['HOME'] ?? '/home/deck';
   }
-  
+
   @override
   String get heroicConfigPath {
     // First check for Flatpak installation (more common)
@@ -52,13 +57,13 @@ class LinuxPlatformService extends PlatformService {
     // Fallback to standard installation
     return '$_homeDir/.config/heroic';
   }
-  
+
   @override
   String get gameConfigPath => '$heroicConfigPath/GamesConfig';
-  
+
   @override
   String get iconCachePath => '$heroicConfigPath/store';
-  
+
   @override
   String get backupBasePath => '$_homeDir/.config/heroic_lsfg_applier/backups';
 
@@ -67,6 +72,12 @@ class LinuxPlatformService extends PlatformService {
 
   @override
   String get steamUserDataPath => '$_homeDir/.steam/steam/userdata';
+
+  @override
+  List<String> get steamUserDataPaths => [
+    '$_homeDir/.steam/steam/userdata',
+    '$_homeDir/.local/share/Steam/userdata',
+  ];
 
   @override
   String get lutrisConfigPath {
@@ -81,20 +92,20 @@ class LinuxPlatformService extends PlatformService {
 /// macOS implementation for development/testing
 class MacOSPlatformService extends PlatformService {
   late final String _homeDir;
-  
+
   MacOSPlatformService() {
     _homeDir = Platform.environment['HOME'] ?? '/Users/user';
   }
-  
+
   @override
   String get heroicConfigPath => '$_homeDir/HeroicTest/config/heroic';
-  
+
   @override
   String get gameConfigPath => '$heroicConfigPath/GamesConfig';
-  
+
   @override
   String get iconCachePath => '$heroicConfigPath/store';
-  
+
   @override
   String get backupBasePath => '$_homeDir/HeroicTest/heroic_lsfg_applier/backups';
 
@@ -103,6 +114,9 @@ class MacOSPlatformService extends PlatformService {
 
   @override
   String get steamUserDataPath => '$_homeDir/HeroicTest/Steam/userdata';
+
+  @override
+  List<String> get steamUserDataPaths => ['$_homeDir/HeroicTest/Steam/userdata'];
 
   @override
   String get lutrisConfigPath => '$_homeDir/HeroicTest/lutris/games';
