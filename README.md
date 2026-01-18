@@ -27,7 +27,7 @@ A Flutter desktop application for **Steam Deck** that enables **Lossless Scaling
 
 ## 📦 Installation
 
-### Method 1: One-Liner Install (Recommended) 🚀
+### One-Command Install 🚀
 
 Open Konsole (terminal) on your Steam Deck in Desktop Mode and run:
 
@@ -38,126 +38,12 @@ curl -fsSL https://raw.githubusercontent.com/tieorange/heroic-lsfg-applier/main/
 The app will be installed and appear in your application menu! 🎉  
 **Auto-updates are enabled by default** - the app checks for updates on startup.
 
-### Method 2: Download Release
-
-1. **Download** the latest `heroic_lsfg_applier_linux_x64.zip` from [Releases](https://github.com/tieorange/heroic-lsfg-applier/releases)
-2. **Transfer** the zip to your Steam Deck (Desktop Mode)
-3. **Extract** the zip file
-4. **Run the installer**:
-   ```bash
-   ./install_local.sh
-   ```
-
-### Method 3: Build from Source
-
-```bash
-# Clone the repo
-git clone https://github.com/tieorange/heroic-lsfg-applier.git
-cd heroic-lsfg-applier
-
-# Build on Steam Deck
-./scripts/build_on_deck.sh
-
-# Install
-./scripts/install_local.sh
-```
-
-### Uninstall
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/tieorange/heroic-lsfg-applier/main/uninstall.sh | bash
-```
-
 ---
 
-## 🛠️ Makefile Commands
+## 🛠️ Development
 
-We provide a `Makefile` for easy development:
+For build instructions, technical details, and contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-| Command | Description |
-|---------|-------------|
-| `make run` | Run the app on macOS |
-| `make analyze` | Run Flutter analyzer |
-| `make gen` | Generate freezed/json code |
-| `make setup-test` | Create test environment (macOS) |
-| `make verify-test` | Check if LSFG applied correctly |
-| `make build-linux` | Build Linux release via Docker |
-| `make install` | Install app locally |
-| `make clean` | Clean build artifacts |
-
----
-
-## 🚀 Usage
-
-1. **Launch** the app from your application menu
-2. **Create a backup** first (backup icon in top bar)
-3. **Select games** you want to enable LSFG for
-4. **Click "Apply LSFG"** ✅
-5. **Launch your games** - Frame generation is now active!
-
-### Removing LSFG
-
-1. Select games → Click **"Remove LSFG"** ❌
-
-### Restoring from Backup
-
-1. Go to Backup & Restore → Select backup → Restore 🔄
-
----
-
-## ⚙️ How It Works
-
-The app modifies game configuration files:
-
-| Launcher | Config Location | Method |
-|----------|-----------------|--------|
-| **Heroic** | `~/.var/app/com.heroicgameslauncher.hgl/config/heroic/GamesConfig/*.json` | Adds `LSFG_PROCESS` to `environmentOptions` |
-| **Lutris** | `~/.config/lutris/games/*.yml` | Adds `LSFG_PROCESS` to `system.env` |
-| **OGI** | `~/.steam/steam/userdata/*/config/shortcuts.vdf` | Injects env var into `LaunchOptions` |
-
----
-
-## 💻 Development
-
-### Building for Linux from Mac (Apple Silicon)
-
-1. **Install Docker Desktop** (enable Rosetta for x86/amd64)
-2. Run:
-   ```bash
-   make build-linux
-   ```
-3. Output: `releases/heroic_lsfg_applier_linux_x64.zip`
-
-### Testing OGI Support (macOS)
-
-```bash
-# 1. Setup test environment
-make setup-test
-
-# 2. Run the app and apply LSFG to "Test OGI Game"
-make run
-
-# 3. Verify the change
-make verify-test
-```
-
-### Project Structure
-
-```
-lib/
-├── core/
-│   ├── logging/        # LoggerService
-│   ├── platform/       # Platform paths
-│   ├── services/       # VdfBinaryService
-│   └── theme/          # Material 3 themes
-├── features/
-│   ├── games/          # Main game list feature
-│   ├── backup/         # Backup & restore
-│   └── settings/       # App settings
-└── main.dart
-```
-
----
 
 ## 📋 Requirements
 
